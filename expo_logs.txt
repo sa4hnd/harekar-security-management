@@ -1436,3 +1436,4 @@ iOS Bundled 364ms node_modules/expo-router/entry.js (1 module)
  WARN  `expo-notifications` functionality is not fully supported in Expo Go:
 We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
  LOG  Push token not available (preview mode) - local notifications still work
+ WARN  The <CameraView> component does not support children. This may lead to inconsistent behaviour or crashes. If you want to render content on top of the Camera, consider using absolute positioning.
