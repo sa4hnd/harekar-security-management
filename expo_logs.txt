@@ -1510,3 +1510,5 @@ Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░
 λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
   Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
 Web Bundled 2123ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 645ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
