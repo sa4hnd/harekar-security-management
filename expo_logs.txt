@@ -1102,3 +1102,165 @@ Call Stack
   TabsLayout (app/(tabs)/_layout.tsx:27:5)
   RootLayoutNav (app/_layout.tsx:14:5)
   RootLayout (app/_layout.tsx:27:7)
+ ERROR  [ReferenceError: Property 'formatTime' doesn't exist] 
+
+Code: index.tsx
+[0m [90m 157 |[39m                             [33m<[39m[33mLogIn[39m size[33m=[39m{[35m12[39m} color[33m=[39m{[33mColors[39m[33m.[39msuccess} [33m/[39m[33m>[39m
+ [90m 158 |[39m                           [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+[31m[1m>[22m[39m[90m 159 |[39m                           [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39mtimeValue}[33m>[39m{formatTime(record[33m.[39mcheck_in_time)}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+ [90m     |[39m                                                           [31m[1m^[22m[39m
+ [90m 160 |[39m                         [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 161 |[39m                         [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39mtimeSeparator} [33m/[39m[33m>[39m
+ [90m 162 |[39m                         [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39mtimeItem}[33m>[39m[0m
+Call Stack
+  group.records.map$argument_0 (app/(tabs)/history/index.tsx:159:59)
+  attendance.map$argument_0 (app/(tabs)/history/index.tsx:134:33)
+  HistoryScreen (app/(tabs)/history/index.tsx:124:25) 
+
+Code: index.tsx
+[0m [90m 992 |[39m     width[33m:[39m [35m32[39m[33m,[39m
+ [90m 993 |[39m     height[33m:[39m [35m32[39m[33m,[39m
+[31m[1m>[22m[39m[90m 994 |[39m     borderRadius[33m:[39m [35m16[39m[33m,[39m
+ [90m     |[39m                     [31m[1m^[22m[39m
+ [90m 995 |[39m     backgroundColor[33m:[39m [33mColors[39m[33m.[39mprimary[33m,[39m
+ [90m 996 |[39m     justifyContent[33m:[39m [32m"center"[39m[33m,[39m
+ [90m 997 |[39m     alignItems[33m:[39m [32m"center"[39m[33m,[39m[0m
+Call Stack
+  <global> (app/(tabs)/employees/index.tsx:994:21)
+  TabsLayout (app/(tabs)/_layout.tsx:28:5)
+  <global> (app/(tabs)/shifts/index.tsx:634:21)
+  <global> (app/(tabs)/shifts/index.tsx:681:28)
+ ERROR  [ReferenceError: Property 'formatTime' doesn't exist] 
+
+Code: index.tsx
+[0m [90m 485 |[39m                   [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39mtodayTimeInfo}[33m>[39m
+ [90m 486 |[39m                     [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39mtodayTimeLabel}[33m>[39m{t[33m.[39mcheckIn}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+[31m[1m>[22m[39m[90m 487 |[39m                     [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39mtodayTimeValue}[33m>[39m{formatTime(todayAttendance[33m.[39mcheck_in_time)}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+ [90m     |[39m                                                          [31m[1m^[22m[39m
+ [90m 488 |[39m                   [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 489 |[39m                 [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 490 |[39m               )}[0m
+Call Stack
+  HomeScreen (app/(tabs)/(home)/index.tsx:487:58) 
+
+Code: _layout.tsx
+[0m [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mHomeLayout[39m() {
+[31m[1m>[22m[39m[90m 4 |[39m   [36mreturn[39m [33m<[39m[33mStack[39m screenOptions[33m=[39m{{ headerShown[33m:[39m [36mfalse[39m }} [33m/[39m[33m>[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m
+ [90m 5 |[39m }
+ [90m 6 |[39m[0m
+Call Stack
+  HomeLayout (app/(tabs)/(home)/_layout.tsx:4:10)
+  TabsLayout (app/(tabs)/_layout.tsx:28:5)
+  <global> (app/(tabs)/shifts/index.tsx:656:17)
+  <global> (app/(tabs)/shifts/index.tsx:703:4)
+ ERROR  [ReferenceError: Property 'formatTime' doesn't exist] 
+
+Code: index.tsx
+[0m [90m 485 |[39m                   [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39mtodayTimeInfo}[33m>[39m
+ [90m 486 |[39m                     [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39mtodayTimeLabel}[33m>[39m{t[33m.[39mcheckIn}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+[31m[1m>[22m[39m[90m 487 |[39m                     [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39mtodayTimeValue}[33m>[39m{formatTime(todayAttendance[33m.[39mcheck_in_time)}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+ [90m     |[39m                                                          [31m[1m^[22m[39m
+ [90m 488 |[39m                   [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 489 |[39m                 [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 490 |[39m               )}[0m
+Call Stack
+  HomeScreen (app/(tabs)/(home)/index.tsx:487:58) 
+
+Code: _layout.tsx
+[0m [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mHomeLayout[39m() {
+[31m[1m>[22m[39m[90m 4 |[39m   [36mreturn[39m [33m<[39m[33mStack[39m screenOptions[33m=[39m{{ headerShown[33m:[39m [36mfalse[39m }} [33m/[39m[33m>[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m
+ [90m 5 |[39m }
+ [90m 6 |[39m[0m
+Call Stack
+  HomeLayout (app/(tabs)/(home)/_layout.tsx:4:10)
+  TabsLayout (app/(tabs)/_layout.tsx:28:5)
+  <global> (app/(tabs)/shifts/index.tsx:655:20)
+  <global> (app/(tabs)/shifts/index.tsx:702:19)
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundled 7191ms node_modules/expo-router/entry.js (1 module)
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  Error getting push token: [Error: No "projectId" found. If "projectId" can't be inferred from the manifest (for instance, in bare workflow), you have to pass it in yourself.] 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules/@babel/runtime/helpers/construct.js:4:65)
+  Wrapper (node_modules/@babel/runtime/helpers/wrapNativeSuper.js:15:23)
+  construct (<native>)
+  _callSuper (node_modules/@babel/runtime/helpers/callSuper.js:5:108)
+  constructor (node_modules/expo-modules-core/src/errors/CodedError.ts:11:5)
+  getExpoPushTokenAsync (node_modules/expo-notifications/build/getExpoPushTokenAsync.js:53:29)
+  next (<native>)
+  asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+  _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:27)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundled 194ms node_modules/expo-router/entry.js (1 module)
+ WARN  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  Error getting push token: [Error: No "projectId" found. If "projectId" can't be inferred from the manifest (for instance, in bare workflow), you have to pass it in yourself.] 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules/@babel/runtime/helpers/construct.js:4:65)
+  Wrapper (node_modules/@babel/runtime/helpers/wrapNativeSuper.js:15:23)
+  construct (<native>)
+  _callSuper (node_modules/@babel/runtime/helpers/callSuper.js:5:108)
+  constructor (node_modules/expo-modules-core/src/errors/CodedError.ts:11:5)
+  getExpoPushTokenAsync (node_modules/expo-notifications/build/getExpoPushTokenAsync.js:53:29)
+  next (<native>)
+  asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+  _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:27)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  Text strings must be rendered within a <Text> component. 
+
+Code: AttendanceDetails.tsx
+[0m [90m 108 |[39m               [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 109 |[39m
+[31m[1m>[22m[39m[90m 110 |[39m               [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39minfoCard}[33m>[39m
+ [90m     |[39m               [31m[1m^[22m[39m
+ [90m 111 |[39m                 [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39minfoRow}[33m>[39m
+ [90m 112 |[39m                   [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39minfoValue}[33m>[39m{formatTime12h(attendance[33m.[39mcheck_in_time)}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+ [90m 113 |[39m                   [33m<[39m[33mView[39m style[33m=[39m{styles[33m.[39minfoMeta}[33m>[39m[0m
+Call Stack
+  AttendanceDetails (components/AttendanceDetails.tsx:110:15)
+  HomeScreen (app/(tabs)/(home)/index.tsx:438:9)
+  HomeLayout (app/(tabs)/(home)/_layout.tsx:4:10)
+  TabsLayout (app/(tabs)/_layout.tsx:28:5)
+  RootLayoutNav (app/_layout.tsx:87:7)
+  RootLayout (app/_layout.tsx:101:7)
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundled 147ms node_modules/expo-router/entry.js (1 module)
+ WARN  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  Error getting push token: [Error: No "projectId" found. If "projectId" can't be inferred from the manifest (for instance, in bare workflow), you have to pass it in yourself.] 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules/@babel/runtime/helpers/construct.js:4:65)
+  Wrapper (node_modules/@babel/runtime/helpers/wrapNativeSuper.js:15:23)
+  construct (<native>)
+  _callSuper (node_modules/@babel/runtime/helpers/callSuper.js:5:108)
+  constructor (node_modules/expo-modules-core/src/errors/CodedError.ts:11:5)
+  getExpoPushTokenAsync (node_modules/expo-notifications/build/getExpoPushTokenAsync.js:53:29)
+  next (<native>)
+  asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+  _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:27)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+Tunnel connection has been closed. This is often related to intermittent connection issues between the dev server and ngrok. Restart the dev server to try connecting to ngrok again.
+Check the Ngrok status page for outages: https://status.ngrok.com/
+Tunnel connected.

@@ -6,6 +6,7 @@ import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import StatusBadge from "@/components/StatusBadge";
 import MapViewEmbed from "@/components/MapViewEmbed";
+import { formatTime12h, formatShiftTime12h, formatDuration } from "@/lib/utils/time";
 
 interface AttendanceDetailsProps {
   visible: boolean;
@@ -34,30 +35,13 @@ export default function AttendanceDetails({ visible, onClose, attendance, employ
 
   if (!attendance) return null;
 
-  const formatTime = (timeStr?: string) => {
-    if (!timeStr) return "--:--";
-    return new Date(timeStr).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-  };
-
-  const formatShiftTime = (timeStr?: string) => {
-    if (!timeStr) return "--:--";
-    const [hours, minutes] = timeStr.split(":");
-    return `${hours}:${minutes}`;
-  };
-
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     return new Date(dateStr).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   };
 
   const getDuration = () => {
-    if (!attendance.check_in_time || !attendance.check_out_time) return null;
-    const start = new Date(attendance.check_in_time);
-    const end = new Date(attendance.check_out_time);
-    const diff = end.getTime() - start.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
+    return formatDuration(attendance.check_in_time, attendance.check_out_time);
   };
 
   return (
@@ -103,12 +87,12 @@ export default function AttendanceDetails({ visible, onClose, attendance, employ
                 </View>
                 <View style={styles.shiftTimes}>
                   <View style={styles.shiftItem}>
-                    <Text style={styles.shiftValue}>{formatShiftTime(employeeShiftEnd)}</Text>
+                    <Text style={styles.shiftValue}>{formatShiftTime12h(employeeShiftEnd)}</Text>
                     <Text style={styles.shiftLabel}>{t.endTime}</Text>
                   </View>
                   <View style={styles.shiftDivider} />
                   <View style={styles.shiftItem}>
-                    <Text style={styles.shiftValue}>{formatShiftTime(employeeShiftStart)}</Text>
+                    <Text style={styles.shiftValue}>{formatShiftTime12h(employeeShiftStart)}</Text>
                     <Text style={styles.shiftLabel}>{t.startTime}</Text>
                   </View>
                 </View>
@@ -125,7 +109,7 @@ export default function AttendanceDetails({ visible, onClose, attendance, employ
 
               <View style={styles.infoCard}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoValue}>{formatTime(attendance.check_in_time)}</Text>
+                  <Text style={styles.infoValue}>{formatTime12h(attendance.check_in_time)}</Text>
                   <View style={styles.infoMeta}>
                     <Text style={styles.infoLabel}>{t.time}</Text>
                     <Clock size={12} color={Colors.textTertiary} />
@@ -169,7 +153,7 @@ export default function AttendanceDetails({ visible, onClose, attendance, employ
 
                 <View style={styles.infoCard}>
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoValue}>{formatTime(attendance.check_out_time)}</Text>
+                    <Text style={styles.infoValue}>{formatTime12h(attendance.check_out_time)}</Text>
                     <View style={styles.infoMeta}>
                       <Text style={styles.infoLabel}>{t.time}</Text>
                       <Clock size={12} color={Colors.textTertiary} />

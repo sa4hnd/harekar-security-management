@@ -104,3 +104,80 @@ export interface Attendance {
 export interface AttendanceWithUser extends Attendance {
   user?: User;
 }
+
+// ============================================
+// NEW TABLE INTERFACES
+// ============================================
+
+export interface Incident {
+  id: string;
+  user_id: string;
+  type: "security_breach" | "suspicious_activity" | "equipment_issue" | "other";
+  priority: "urgent" | "normal";
+  description: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  photo_url?: string;
+  status: "pending" | "in_progress" | "resolved";
+  resolved_at?: string;
+  resolved_by?: string;
+  resolution_notes?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface IncidentWithUser extends Incident {
+  user?: User;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  sent_by: string;
+  priority: "urgent" | "normal";
+  is_active: boolean;
+  expires_at?: string;
+  created_at: string;
+}
+
+export interface AnnouncementWithUser extends Announcement {
+  sender?: User;
+}
+
+export interface NotificationLog {
+  id: string;
+  user_id?: string;
+  type: "shift_reminder" | "shift_start" | "shift_end" | "incident" | "announcement" | "custom";
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  sent_at: string;
+  delivered: boolean;
+  read_at?: string;
+  error?: string;
+}
+
+export interface Shift {
+  id: string;
+  user_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  location_name?: string;
+  notes?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Report {
+  id: string;
+  generated_by: string;
+  report_type: "daily" | "weekly" | "monthly" | "custom";
+  period_start: string;
+  period_end: string;
+  data: Record<string, unknown>;
+  created_at: string;
+}

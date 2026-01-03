@@ -197,7 +197,12 @@ export const t = {
   newAnnouncement: "ڕاگەیاندنی نوێ",
   announcementTitle: "سەردێڕ",
   announcementBody: "ناوەڕۆک",
+  announcementMessage: "پەیام",
   sendToAll: "بۆ هەمووان",
   noAnnouncements: "ڕاگەیاندن نییە",
   publishAnnouncement: "بڵاوکردنەوە",
+  sendAnnouncement: "ناردنی ئاگادارکردنەوە",
+  announce: "ڕاگەیاندن",
+  send: "ناردن",
+  priority: "پلە",
 };

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, ViewStyle } from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertTriangle, Plus, X, Check, ChevronRight, Clock, MapPin, Shield, AlertCircle, Wrench, HelpCircle, Flame, FileText } from "lucide-react-native";
@@ -8,6 +8,7 @@ import { useAuth } from "@/state/auth";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sendImmediateNotification } from "@/lib/notifications/notificationService";
 
 interface Incident {
   id: string;
@@ -55,10 +56,7 @@ export default function IncidentsScreen() {
       const stored = await AsyncStorage.getItem("incidents");
       let allIncidents: Incident[] = stored ? JSON.parse(stored) : [];
 
-      if (!isSupervisor && user) {
-        allIncidents = allIncidents.filter(i => i.user_id === user.id);
-      }
-
+      // All users (both security guards and supervisors) can see all incidents
       allIncidents.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setIncidents(allIncidents);
     } catch (error) {
@@ -133,6 +131,15 @@ export default function IncidentsScreen() {
       const existingIncidents: Incident[] = stored ? JSON.parse(stored) : [];
       existingIncidents.push(incident);
       await AsyncStorage.setItem("incidents", JSON.stringify(existingIncidents));
+
+      // Send notification to all users about the new incident
+      const typeLabel = INCIDENT_TYPES.find(t => t.id === incident.type)?.label || incident.type;
+      const priorityText = incident.priority === "urgent" ? " [URGENT]" : "";
+      await sendImmediateNotification(
+        `${t.newIncident}${priorityText}`,
+        `${user.full_name}: ${incident.description.substring(0, 100)}${incident.description.length > 100 ? "..." : ""}`,
+        { type: "incident", incidentId: incident.id, incidentType: incident.type }
+      );
 
       if (Platform.OS !== "web") {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -229,15 +236,15 @@ export default function IncidentsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centered]}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
         {!isSupervisor && (
           <Pressable
             style={({ pressed }) => [styles.reportButton, pressed && styles.reportButtonPressed]}
@@ -247,7 +254,7 @@ export default function IncidentsScreen() {
             <Text style={styles.reportButtonText}>{t.reportIncident}</Text>
           </Pressable>
         )}
-        <View style={[styles.headerTitles, isSupervisor && { flex: 1 }]}>
+        <View style={[styles.headerTitles, isSupervisor ? styles.headerTitlesFull : undefined]}>
           <Text style={styles.headerTitle}>{t.incidents}</Text>
           <Text style={styles.headerSubtitle}>
             {incidents.filter(i => i.status !== "resolved").length} {t.pending}
@@ -317,9 +324,10 @@ export default function IncidentsScreen() {
                           {incident.location}
                         </Text>
                       </View>
-                      {isSupervisor && (
-                        <Text style={styles.reportedBy}>{incident.user_name}</Text>
-                      )}
+                      {/* Show reporter name for all users */}
+                      <Text style={[styles.reportedBy, incident.user_id === user?.id && styles.ownIncident]}>
+                        {incident.user_id === user?.id ? t.you : incident.user_name}
+                      </Text>
                     </View>
                     <View style={[styles.typeIconWrapper, { backgroundColor: typeConfig.color + "20" }]}>
                       <TypeIcon size={22} color={typeConfig.color} />
@@ -534,9 +542,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  centered: {
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
     justifyContent: "center",
     alignItems: "center",
+  },
+  headerWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   header: {
     flexDirection: "row",
@@ -547,6 +564,9 @@ const styles = StyleSheet.create({
   },
   headerTitles: {
     alignItems: "flex-end",
+  },
+  headerTitlesFull: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 32,
@@ -699,6 +719,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textTertiary,
     marginTop: 6,
+  },
+  ownIncident: {
+    color: Colors.primary,
+    fontWeight: "600" as const,
   },
   typeIconWrapper: {
     width: 48,
@@ -945,3 +969,5 @@ const styles = StyleSheet.create({
 
 (t as Record<string, string>).incidentDetails = "وردەکاری ڕووداو";
 (t as Record<string, string>).updateStatus = "نوێکردنەوەی بارودۆخ";
+(t as Record<string, string>).you = "تۆ";
+(t as Record<string, string>).newIncident = "ڕووداوی نوێ";

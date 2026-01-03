@@ -29,6 +29,7 @@ export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [isChangingPeriod, setIsChangingPeriod] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [weeklyStats, setWeeklyStats] = useState<DayStats[]>([]);
   const [employeePerformance, setEmployeePerformance] = useState<EmployeePerformance[]>([]);
@@ -40,8 +41,12 @@ export default function ReportsScreen() {
     trend: 0
   });
 
-  const fetchReports = async () => {
+  const fetchReports = async (showPeriodLoading = false) => {
     if (!user) return;
+
+    if (showPeriodLoading) {
+      setIsChangingPeriod(true);
+    }
 
     try {
       const { data: employees } = await supabase
@@ -148,13 +153,21 @@ export default function ReportsScreen() {
       console.error("Error fetching reports:", error);
     } finally {
       setIsLoading(false);
+      setIsChangingPeriod(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchReports();
-  }, [user, selectedPeriod]);
+  }, [user]);
+
+  // Separate effect for period changes to show loading
+  useEffect(() => {
+    if (!isLoading) {
+      fetchReports(true);
+    }
+  }, [selectedPeriod]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -234,6 +247,7 @@ export default function ReportsScreen() {
         <Pressable
           style={[styles.periodBtn, selectedPeriod === "month" && styles.periodBtnActive]}
           onPress={() => setSelectedPeriod("month")}
+          disabled={isChangingPeriod}
         >
           <Text style={[styles.periodBtnText, selectedPeriod === "month" && styles.periodBtnTextActive]}>
             {t.lastMonth}
@@ -242,12 +256,20 @@ export default function ReportsScreen() {
         <Pressable
           style={[styles.periodBtn, selectedPeriod === "week" && styles.periodBtnActive]}
           onPress={() => setSelectedPeriod("week")}
+          disabled={isChangingPeriod}
         >
           <Text style={[styles.periodBtnText, selectedPeriod === "week" && styles.periodBtnTextActive]}>
             {t.lastWeek}
           </Text>
         </Pressable>
       </View>
+
+      {isChangingPeriod && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+          <Text style={styles.loadingText}>{t.loading}</Text>
+        </View>
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -458,6 +480,22 @@ const styles = StyleSheet.create({
   periodBtnTextActive: {
     color: Colors.textPrimary,
     fontWeight: "600" as const,
+  },
+  loadingOverlay: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 8,
+    backgroundColor: Colors.tint.blue,
+    borderRadius: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: "500" as const,
   },
   scrollContent: {
     paddingHorizontal: 20,

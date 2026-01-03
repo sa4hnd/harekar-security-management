@@ -8,6 +8,7 @@ import { useAuth } from "@/state/auth";
 import { supabase, Attendance } from "@/lib/supabase";
 import AttendanceDetails from "@/components/AttendanceDetails";
 import StatusBadge from "@/components/StatusBadge";
+import { formatTime12h, formatDuration } from "@/lib/utils/time";
 
 interface GroupedAttendance {
   date: string;
@@ -88,19 +89,8 @@ export default function HistoryScreen() {
     return date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
   };
 
-  const formatTime = (time?: string) => {
-    if (!time) return "--:--";
-    return new Date(time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-  };
-
   const calculateDuration = (checkIn?: string, checkOut?: string) => {
-    if (!checkIn || !checkOut) return null;
-    const start = new Date(checkIn);
-    const end = new Date(checkOut);
-    const diff = end.getTime() - start.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
+    return formatDuration(checkIn, checkOut);
   };
 
   if (isLoading) {
@@ -166,14 +156,14 @@ export default function HistoryScreen() {
                           <View style={[styles.timeIcon, { backgroundColor: Colors.successLight }]}>
                             <LogIn size={12} color={Colors.success} />
                           </View>
-                          <Text style={styles.timeValue}>{formatTime(record.check_in_time)}</Text>
+                          <Text style={styles.timeValue}>{formatTime12h(record.check_in_time)}</Text>
                         </View>
                         <View style={styles.timeSeparator} />
                         <View style={styles.timeItem}>
                           <View style={[styles.timeIcon, { backgroundColor: Colors.tint.purple }]}>
                             <LogOut size={12} color={Colors.secondary} />
                           </View>
-                          <Text style={styles.timeValue}>{formatTime(record.check_out_time)}</Text>
+                          <Text style={styles.timeValue}>{formatTime12h(record.check_out_time)}</Text>
                         </View>
                       </View>
 

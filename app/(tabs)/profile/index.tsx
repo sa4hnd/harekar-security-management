@@ -6,6 +6,7 @@ import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
 import * as Haptics from "expo-haptics";
+import { formatShiftTime12h } from "@/lib/utils/time";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -34,11 +35,6 @@ export default function ProfileScreen() {
       month: "long",
       day: "numeric",
     });
-  };
-
-  const formatShiftTime = (time?: string) => {
-    if (!time) return "--:--";
-    return time.slice(0, 5);
   };
 
   const isSupervisor = user?.role === "supervisor";
@@ -94,7 +90,7 @@ export default function ProfileScreen() {
                 <View style={styles.infoRow}>
                   <View style={styles.infoContent}>
                     <Text style={styles.infoValue}>
-                      {formatShiftTime(user?.shift_start_time)} - {formatShiftTime(user?.shift_end_time)}
+                      {formatShiftTime12h(user?.shift_start_time)} - {formatShiftTime12h(user?.shift_end_time)}
                     </Text>
                     <Text style={styles.infoLabel}>{t.shiftTime}</Text>
                   </View>

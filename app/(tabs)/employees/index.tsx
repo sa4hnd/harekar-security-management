@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard } from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Users, Plus, Search, ChevronRight, Mail, Phone, Shield, X, Check, Trash2, Clock } from "lucide-react-native";
@@ -8,6 +8,7 @@ import { useAuth } from "@/state/auth";
 import { supabase, User, Attendance } from "@/lib/supabase";
 import AttendanceDetails from "@/components/AttendanceDetails";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { formatShiftTime12h, formatTime12h } from "@/lib/utils/time";
 
 interface EmployeeWithStats extends User {
   todayAttendance?: Attendance;
@@ -222,12 +223,6 @@ export default function EmployeesScreen() {
       .slice(0, 2);
   };
 
-  const formatTime = (time?: string) => {
-    if (!time) return "--:--";
-    const [hours, minutes] = time.split(":");
-    return `${hours}:${minutes}`;
-  };
-
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -308,7 +303,7 @@ export default function EmployeesScreen() {
                     <View style={styles.shiftInfo}>
                       <Clock size={12} color={Colors.textTertiary} />
                       <Text style={styles.shiftText}>
-                        {formatTime(emp.shift_start_time)} - {formatTime(emp.shift_end_time)}
+                        {formatShiftTime12h(emp.shift_start_time)} - {formatShiftTime12h(emp.shift_end_time)}
                       </Text>
                     </View>
                   </View>
@@ -325,276 +320,325 @@ export default function EmployeesScreen() {
         <View style={{ height: insets.bottom + 100 }} />
       </ScrollView>
 
-      <Modal visible={showAddModal} animationType="slide" transparent>
+      <Modal
+        visible={showAddModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          dismissKeyboard();
+          setShowAddModal(false);
+        }}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
           keyboardVerticalOffset={0}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => { dismissKeyboard(); setShowAddModal(false); }} />
-          <TouchableWithoutFeedback onPress={dismissKeyboard}>
-            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
-              <View style={styles.modalHandle} />
-              <View style={styles.modalHeader}>
-                <Pressable onPress={() => { dismissKeyboard(); setShowAddModal(false); }} style={styles.closeButton}>
-                  <X size={20} color={Colors.textPrimary} />
-                </Pressable>
-                <Text style={styles.modalTitle}>{t.addEmployee}</Text>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => {
+              dismissKeyboard();
+              setShowAddModal(false);
+            }}
+          />
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Pressable
+                onPress={() => {
+                  dismissKeyboard();
+                  setShowAddModal(false);
+                }}
+                style={styles.closeButton}
+              >
+                <X size={20} color={Colors.textPrimary} />
+              </Pressable>
+              <Text style={styles.modalTitle}>{t.addEmployee}</Text>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              onScrollBeginDrag={dismissKeyboard}
+            >
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>{t.fullName} *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder={t.fullName}
+                  placeholderTextColor={Colors.textTertiary}
+                  value={newEmployee.full_name}
+                  onChangeText={(text) => setNewEmployee({ ...newEmployee, full_name: text })}
+                  textAlign="right"
+                  returnKeyType="next"
+                />
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{t.fullName} *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder={t.fullName}
-                    placeholderTextColor={Colors.textTertiary}
-                    value={newEmployee.full_name}
-                    onChangeText={(text) => setNewEmployee({ ...newEmployee, full_name: text })}
-                    textAlign="right"
-                    returnKeyType="next"
-                  />
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>{t.email} *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder={t.email}
+                  placeholderTextColor={Colors.textTertiary}
+                  value={newEmployee.email}
+                  onChangeText={(text) => setNewEmployee({ ...newEmployee, email: text })}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  textAlign="right"
+                  returnKeyType="next"
+                />
+              </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{t.email} *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder={t.email}
-                    placeholderTextColor={Colors.textTertiary}
-                    value={newEmployee.email}
-                    onChangeText={(text) => setNewEmployee({ ...newEmployee, email: text })}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    textAlign="right"
-                    returnKeyType="next"
-                  />
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>{t.phone}</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder={t.phone}
+                  placeholderTextColor={Colors.textTertiary}
+                  value={newEmployee.phone}
+                  onChangeText={(text) => setNewEmployee({ ...newEmployee, phone: text })}
+                  keyboardType="phone-pad"
+                  textAlign="right"
+                  returnKeyType="next"
+                />
+              </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{t.phone}</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder={t.phone}
-                    placeholderTextColor={Colors.textTertiary}
-                    value={newEmployee.phone}
-                    onChangeText={(text) => setNewEmployee({ ...newEmployee, phone: text })}
-                    keyboardType="phone-pad"
-                    textAlign="right"
-                    returnKeyType="next"
-                  />
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>{t.password} *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder={t.password}
+                  placeholderTextColor={Colors.textTertiary}
+                  value={newEmployee.password}
+                  onChangeText={(text) => setNewEmployee({ ...newEmployee, password: text })}
+                  secureTextEntry
+                  textAlign="right"
+                  returnKeyType="next"
+                />
+              </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{t.password} *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder={t.password}
-                    placeholderTextColor={Colors.textTertiary}
-                    value={newEmployee.password}
-                    onChangeText={(text) => setNewEmployee({ ...newEmployee, password: text })}
-                    secureTextEntry
-                    textAlign="right"
-                    returnKeyType="next"
-                  />
-                </View>
-
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{t.shiftTime}</Text>
-                  <View style={styles.timeRow}>
-                    <View style={styles.timeInput}>
-                      <Text style={styles.timeLabel}>{t.endTime}</Text>
-                      <TextInput
-                        style={styles.formInput}
-                        placeholder="16:00"
-                        placeholderTextColor={Colors.textTertiary}
-                        value={newEmployee.shift_end}
-                        onChangeText={(text) => setNewEmployee({ ...newEmployee, shift_end: text })}
-                        textAlign="center"
-                        keyboardType="numbers-and-punctuation"
-                        returnKeyType="done"
-                        onSubmitEditing={handleCreateEmployee}
-                      />
-                    </View>
-                    <View style={styles.timeInput}>
-                      <Text style={styles.timeLabel}>{t.startTime}</Text>
-                      <TextInput
-                        style={styles.formInput}
-                        placeholder="08:00"
-                        placeholderTextColor={Colors.textTertiary}
-                        value={newEmployee.shift_start}
-                        onChangeText={(text) => setNewEmployee({ ...newEmployee, shift_start: text })}
-                        textAlign="center"
-                        keyboardType="numbers-and-punctuation"
-                        returnKeyType="next"
-                      />
-                    </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>{t.shiftTime}</Text>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeInput}>
+                    <Text style={styles.timeLabel}>{t.endTime}</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="16:00"
+                      placeholderTextColor={Colors.textTertiary}
+                      value={newEmployee.shift_end}
+                      onChangeText={(text) => setNewEmployee({ ...newEmployee, shift_end: text })}
+                      textAlign="center"
+                      keyboardType="numbers-and-punctuation"
+                      returnKeyType="done"
+                      onSubmitEditing={handleCreateEmployee}
+                    />
+                  </View>
+                  <View style={styles.timeInput}>
+                    <Text style={styles.timeLabel}>{t.startTime}</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="08:00"
+                      placeholderTextColor={Colors.textTertiary}
+                      value={newEmployee.shift_start}
+                      onChangeText={(text) => setNewEmployee({ ...newEmployee, shift_start: text })}
+                      textAlign="center"
+                      keyboardType="numbers-and-punctuation"
+                      returnKeyType="next"
+                    />
                   </View>
                 </View>
+              </View>
 
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.createButton,
-                    pressed && styles.createButtonPressed,
-                    isCreating && styles.createButtonDisabled,
-                  ]}
-                  onPress={handleCreateEmployee}
-                  disabled={isCreating}
-                >
-                  {isCreating ? (
-                    <ActivityIndicator color={Colors.white} />
-                  ) : (
-                    <>
-                      <Text style={styles.createButtonText}>{t.createEmployee}</Text>
-                      <Check size={20} color={Colors.white} />
-                    </>
-                  )}
-                </Pressable>
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.createButton,
+                  pressed && styles.createButtonPressed,
+                  isCreating && styles.createButtonDisabled,
+                ]}
+                onPress={handleCreateEmployee}
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <>
+                    <Text style={styles.createButtonText}>{t.createEmployee}</Text>
+                    <Check size={20} color={Colors.white} />
+                  </>
+                )}
+              </Pressable>
+            </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      <Modal visible={showDetailModal} animationType="slide" transparent>
+      <Modal
+        visible={showDetailModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          dismissKeyboard();
+          setShowDetailModal(false);
+          setSelectedEmployee(null);
+        }}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => { dismissKeyboard(); setShowDetailModal(false); }} />
-          <TouchableWithoutFeedback onPress={dismissKeyboard}>
-            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
-              <View style={styles.modalHandle} />
-              <View style={styles.modalHeader}>
-                <Pressable onPress={() => { dismissKeyboard(); setShowDetailModal(false); }} style={styles.closeButton}>
-                  <X size={20} color={Colors.textPrimary} />
-                </Pressable>
-                <Text style={styles.modalTitle}>{t.employeeDetails}</Text>
-              </View>
-
-              {selectedEmployee && (
-                <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                  <View style={styles.detailHeader}>
-                    <View style={styles.detailAvatarWrapper}>
-                      <View style={styles.detailAvatarGlow} />
-                      <View style={styles.detailAvatar}>
-                        <Text style={styles.detailAvatarText}>{getInitials(selectedEmployee.full_name)}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.detailName}>{selectedEmployee.full_name}</Text>
-                    <View style={styles.detailBadge}>
-                      <Shield size={14} color={Colors.white} />
-                    </View>
-                  </View>
-
-                  <View style={styles.detailCard}>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailText}>{selectedEmployee.email}</Text>
-                      <View style={[styles.detailIcon, { backgroundColor: Colors.tint.blue }]}>
-                        <Mail size={16} color={Colors.primary} />
-                      </View>
-                    </View>
-                    {selectedEmployee.phone && (
-                      <>
-                        <View style={styles.detailDivider} />
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailText}>{selectedEmployee.phone}</Text>
-                          <View style={[styles.detailIcon, { backgroundColor: Colors.tint.green }]}>
-                            <Phone size={16} color={Colors.success} />
-                          </View>
-                        </View>
-                      </>
-                    )}
-                  </View>
-
-                  <View style={styles.shiftSection}>
-                    <View style={styles.shiftSectionHeader}>
-                      <Pressable
-                        style={({ pressed }) => [styles.saveShiftBtn, pressed && { opacity: 0.7 }, isSavingShift && { opacity: 0.5 }]}
-                        onPress={handleSaveShift}
-                        disabled={isSavingShift}
-                      >
-                        {isSavingShift ? (
-                          <ActivityIndicator size="small" color={Colors.primary} />
-                        ) : (
-                          <>
-                            <Check size={14} color={Colors.primary} />
-                            <Text style={styles.saveShiftText}>{t.saveChanges}</Text>
-                          </>
-                        )}
-                      </Pressable>
-                      <Text style={styles.sectionLabel}>{t.shiftTime}</Text>
-                    </View>
-                    <View style={styles.shiftEditCard}>
-                      <View style={styles.shiftEditRow}>
-                        <View style={styles.shiftEditInputGroup}>
-                          <Text style={styles.shiftEditLabel}>{t.endTime}</Text>
-                          <TextInput
-                            style={styles.shiftEditInput}
-                            value={editShiftEnd}
-                            onChangeText={setEditShiftEnd}
-                            placeholder="16:00"
-                            placeholderTextColor={Colors.textTertiary}
-                            textAlign="center"
-                            keyboardType="numbers-and-punctuation"
-                          />
-                        </View>
-                        <View style={styles.shiftEditInputGroup}>
-                          <Text style={styles.shiftEditLabel}>{t.startTime}</Text>
-                          <TextInput
-                            style={styles.shiftEditInput}
-                            value={editShiftStart}
-                            onChangeText={setEditShiftStart}
-                            placeholder="08:00"
-                            placeholderTextColor={Colors.textTertiary}
-                            textAlign="center"
-                            keyboardType="numbers-and-punctuation"
-                          />
-                        </View>
-                        <View style={[styles.detailIcon, { backgroundColor: Colors.tint.orange }]}>
-                          <Clock size={18} color={Colors.warning} />
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-
-                  {selectedEmployee.todayAttendance && (
-                    <Pressable
-                      style={({ pressed }) => [styles.attendanceSection, pressed && { opacity: 0.9 }]}
-                      onPress={() => {
-                        setSelectedAttendance(selectedEmployee.todayAttendance!);
-                        setShowAttendanceDetails(true);
-                      }}
-                    >
-                      <View style={styles.attendanceSectionHeader}>
-                        <ChevronRight size={18} color={Colors.textTertiary} style={styles.chevronRtl} />
-                        <Text style={styles.sectionLabel}>{t.today}</Text>
-                      </View>
-                      <View style={styles.attendanceCard}>
-                        <View style={styles.attendanceCardRow}>
-                          <View style={[styles.statusDot, { backgroundColor: getStatusColor(selectedEmployee.todayAttendance.status) }]} />
-                          <Text style={styles.attendanceStatus}>{getStatusText(selectedEmployee)}</Text>
-                        </View>
-                        {selectedEmployee.todayAttendance.check_in_time && (
-                          <Text style={styles.attendanceTime}>
-                            {t.checkIn}: {new Date(selectedEmployee.todayAttendance.check_in_time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
-                          </Text>
-                        )}
-                      </View>
-                    </Pressable>
-                  )}
-
-                  <Pressable
-                    style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
-                    onPress={() => handleDeleteEmployee(selectedEmployee)}
-                  >
-                    <Trash2 size={18} color={Colors.error} />
-                    <Text style={styles.deleteButtonText}>{t.removeEmployee}</Text>
-                  </Pressable>
-                </ScrollView>
-              )}
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => {
+              dismissKeyboard();
+              setShowDetailModal(false);
+              setSelectedEmployee(null);
+            }}
+          />
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Pressable
+                onPress={() => {
+                  dismissKeyboard();
+                  setShowDetailModal(false);
+                  setSelectedEmployee(null);
+                }}
+                style={styles.closeButton}
+              >
+                <X size={20} color={Colors.textPrimary} />
+              </Pressable>
+              <Text style={styles.modalTitle}>{t.employeeDetails}</Text>
             </View>
-          </TouchableWithoutFeedback>
+
+            {selectedEmployee && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                onScrollBeginDrag={dismissKeyboard}
+              >
+                <View style={styles.detailHeader}>
+                  <View style={styles.detailAvatarWrapper}>
+                    <View style={styles.detailAvatarGlow} />
+                    <View style={styles.detailAvatar}>
+                      <Text style={styles.detailAvatarText}>{getInitials(selectedEmployee.full_name)}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.detailName}>{selectedEmployee.full_name}</Text>
+                  <View style={styles.detailBadge}>
+                    <Shield size={14} color={Colors.white} />
+                  </View>
+                </View>
+
+                <View style={styles.detailCard}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailText}>{selectedEmployee.email}</Text>
+                    <View style={[styles.detailIcon, { backgroundColor: Colors.tint.blue }]}>
+                      <Mail size={16} color={Colors.primary} />
+                    </View>
+                  </View>
+                  {selectedEmployee.phone && (
+                    <>
+                      <View style={styles.detailDivider} />
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailText}>{selectedEmployee.phone}</Text>
+                        <View style={[styles.detailIcon, { backgroundColor: Colors.tint.green }]}>
+                          <Phone size={16} color={Colors.success} />
+                        </View>
+                      </View>
+                    </>
+                  )}
+                </View>
+
+                <View style={styles.shiftSection}>
+                  <View style={styles.shiftSectionHeader}>
+                    <Pressable
+                      style={({ pressed }) => [styles.saveShiftBtn, pressed && { opacity: 0.7 }, isSavingShift && { opacity: 0.5 }]}
+                      onPress={handleSaveShift}
+                      disabled={isSavingShift}
+                    >
+                      {isSavingShift ? (
+                        <ActivityIndicator size="small" color={Colors.primary} />
+                      ) : (
+                        <>
+                          <Check size={14} color={Colors.primary} />
+                          <Text style={styles.saveShiftText}>{t.saveChanges}</Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Text style={styles.sectionLabel}>{t.shiftTime}</Text>
+                  </View>
+                  <View style={styles.shiftEditCard}>
+                    <View style={styles.shiftEditRow}>
+                      <View style={styles.shiftEditInputGroup}>
+                        <Text style={styles.shiftEditLabel}>{t.endTime}</Text>
+                        <TextInput
+                          style={styles.shiftEditInput}
+                          value={editShiftEnd}
+                          onChangeText={setEditShiftEnd}
+                          placeholder="16:00"
+                          placeholderTextColor={Colors.textTertiary}
+                          textAlign="center"
+                          keyboardType="numbers-and-punctuation"
+                          onBlur={dismissKeyboard}
+                        />
+                      </View>
+                      <View style={styles.shiftEditInputGroup}>
+                        <Text style={styles.shiftEditLabel}>{t.startTime}</Text>
+                        <TextInput
+                          style={styles.shiftEditInput}
+                          value={editShiftStart}
+                          onChangeText={setEditShiftStart}
+                          placeholder="08:00"
+                          placeholderTextColor={Colors.textTertiary}
+                          textAlign="center"
+                          keyboardType="numbers-and-punctuation"
+                          onBlur={dismissKeyboard}
+                        />
+                      </View>
+                      <View style={[styles.detailIcon, { backgroundColor: Colors.tint.orange }]}>
+                        <Clock size={18} color={Colors.warning} />
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {selectedEmployee.todayAttendance && (
+                  <Pressable
+                    style={({ pressed }) => [styles.attendanceSection, pressed && { opacity: 0.9 }]}
+                    onPress={() => {
+                      setSelectedAttendance(selectedEmployee.todayAttendance!);
+                      setShowAttendanceDetails(true);
+                    }}
+                  >
+                    <View style={styles.attendanceSectionHeader}>
+                      <ChevronRight size={18} color={Colors.textTertiary} style={styles.chevronRtl} />
+                      <Text style={styles.sectionLabel}>{t.today}</Text>
+                    </View>
+                    <View style={styles.attendanceCard}>
+                      <View style={styles.attendanceCardRow}>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(selectedEmployee.todayAttendance.status) }]} />
+                        <Text style={styles.attendanceStatus}>{getStatusText(selectedEmployee)}</Text>
+                      </View>
+                      {selectedEmployee.todayAttendance.check_in_time && (
+                        <Text style={styles.attendanceTime}>
+                          {t.checkIn}: {formatTime12h(selectedEmployee.todayAttendance.check_in_time)}
+                        </Text>
+                      )}
+                    </View>
+                  </Pressable>
+                )}
+
+                <Pressable
+                  style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+                  onPress={() => handleDeleteEmployee(selectedEmployee)}
+                >
+                  <Trash2 size={18} color={Colors.error} />
+                  <Text style={styles.deleteButtonText}>{t.removeEmployee}</Text>
+                </Pressable>
+              </ScrollView>
+            )}
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 

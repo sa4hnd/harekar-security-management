@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Platform, Modal, TextInput, KeyboardAvoidingView, Keyboard } from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MapPin, Clock, LogIn, LogOut, Shield, Users, ChevronRight, Calendar, Sparkles, BarChart3, AlertTriangle } from "lucide-react-native";
+import { MapPin, Clock, LogIn, LogOut, Shield, Users, ChevronRight, Calendar, Sparkles, BarChart3, AlertTriangle, Bell, X, Check, Send } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
@@ -12,6 +12,8 @@ import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
 import AttendanceDetails from "@/components/AttendanceDetails";
 import StatusBadge from "@/components/StatusBadge";
+import { formatTime12h } from "@/lib/utils/time";
+import { sendImmediateNotification } from "@/lib/notifications/notificationService";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -21,11 +23,15 @@ export default function HomeScreen() {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(null);
   const [recentHistory, setRecentHistory] = useState<Attendance[]>([]);
-  const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
+  const [selectedAttendance, setSelectedAttendance] = useState<AttendanceWithUser | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [todayAttendances, setTodayAttendances] = useState<AttendanceWithUser[]>([]);
   const [stats, setStats] = useState({ total: 0, onShift: 0, attended: 0, exited: 0, late: 0 });
   const [allSecurities, setAllSecurities] = useState<User[]>([]);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
 
   const isSupervisor = user?.role === "supervisor";
 
@@ -238,11 +244,6 @@ export default function HomeScreen() {
     return t.goodEvening;
   };
 
-  const formatTime = (timeStr?: string) => {
-    if (!timeStr) return "--:--";
-    return new Date(timeStr).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-  };
-
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
@@ -253,6 +254,44 @@ export default function HomeScreen() {
     if (date.toDateString() === today.toDateString()) return t.today;
     if (date.toDateString() === yesterday.toDateString()) return t.yesterday;
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
+  const handleSendAnnouncement = async () => {
+    if (!announcementTitle.trim() || !announcementMessage.trim()) return;
+
+    dismissKeyboard();
+    setIsSendingAnnouncement(true);
+
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    try {
+      await sendImmediateNotification(
+        announcementTitle.trim(),
+        announcementMessage.trim(),
+        { type: "announcement", from: user?.full_name }
+      );
+
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+      setShowAnnouncementModal(false);
+    } catch (error) {
+      console.error("Error sending announcement:", error);
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } finally {
+      setIsSendingAnnouncement(false);
+    }
   };
 
   // Can check in if no attendance today OR if the latest one is checked_out
@@ -339,6 +378,13 @@ export default function HomeScreen() {
               <AlertTriangle size={20} color={Colors.warning} />
               <Text style={styles.quickActionText}>{t.incidents}</Text>
             </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.quickActionBtn, styles.quickActionBtnAnnounce, pressed && styles.quickActionBtnPressed]}
+              onPress={() => setShowAnnouncementModal(true)}
+            >
+              <Bell size={20} color={Colors.white} />
+              <Text style={[styles.quickActionText, { color: Colors.white }]}>{t.announce}</Text>
+            </Pressable>
           </View>
 
           <View style={styles.section}>
@@ -370,8 +416,8 @@ export default function HomeScreen() {
                         <View style={styles.attendanceTimeMeta}>
                           <Clock size={12} color={Colors.textTertiary} />
                           <Text style={styles.attendanceTimeText}>
-                            {formatTime(attendance.check_in_time)}
-                            {attendance.check_out_time && ` ← ${formatTime(attendance.check_out_time)}`}
+                            {formatTime12h(attendance.check_in_time)}
+                            {attendance.check_out_time && ` ← ${formatTime12h(attendance.check_out_time)}`}
                           </Text>
                         </View>
                       </View>
@@ -401,6 +447,93 @@ export default function HomeScreen() {
           employeeShiftEnd={selectedAttendance?.user?.shift_end_time}
           date={selectedAttendance?.date}
         />
+
+        <Modal
+          visible={showAnnouncementModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => {
+            dismissKeyboard();
+            setShowAnnouncementModal(false);
+          }}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.modalOverlay}
+          >
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => {
+                dismissKeyboard();
+                setShowAnnouncementModal(false);
+              }}
+            />
+            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <Pressable
+                  onPress={() => {
+                    dismissKeyboard();
+                    setShowAnnouncementModal(false);
+                  }}
+                  style={styles.closeButton}
+                >
+                  <X size={20} color={Colors.textPrimary} />
+                </Pressable>
+                <Text style={styles.modalTitle}>{t.sendAnnouncement}</Text>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>{t.announcementTitle} *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder={t.announcementTitle}
+                    placeholderTextColor={Colors.textTertiary}
+                    value={announcementTitle}
+                    onChangeText={setAnnouncementTitle}
+                    textAlign="right"
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>{t.announcementMessage} *</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder={t.announcementMessage}
+                    placeholderTextColor={Colors.textTertiary}
+                    value={announcementMessage}
+                    onChangeText={setAnnouncementMessage}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    textAlign="right"
+                  />
+                </View>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.sendButton,
+                    pressed && styles.sendButtonPressed,
+                    isSendingAnnouncement && styles.sendButtonDisabled,
+                  ]}
+                  onPress={handleSendAnnouncement}
+                  disabled={isSendingAnnouncement || !announcementTitle.trim() || !announcementMessage.trim()}
+                >
+                  {isSendingAnnouncement ? (
+                    <ActivityIndicator color={Colors.white} />
+                  ) : (
+                    <>
+                      <Text style={styles.sendButtonText}>{t.send}</Text>
+                      <Send size={20} color={Colors.white} />
+                    </>
+                  )}
+                </Pressable>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
       </View>
     );
   }
@@ -488,7 +621,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.todayTimeInfo}>
                     <Text style={styles.todayTimeLabel}>{t.checkIn}</Text>
-                    <Text style={styles.todayTimeValue}>{formatTime(todayAttendance.check_in_time)}</Text>
+                    <Text style={styles.todayTimeValue}>{formatTime12h(todayAttendance.check_in_time)}</Text>
                   </View>
                 </View>
               )}
@@ -499,7 +632,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.todayTimeInfo}>
                     <Text style={styles.todayTimeLabel}>{t.checkOut}</Text>
-                    <Text style={styles.todayTimeValue}>{formatTime(todayAttendance.check_out_time)}</Text>
+                    <Text style={styles.todayTimeValue}>{formatTime12h(todayAttendance.check_out_time)}</Text>
                   </View>
                 </View>
               )}
@@ -549,11 +682,11 @@ export default function HomeScreen() {
                   <View style={styles.historyCardCenter}>
                     <View style={styles.historyTimeRow}>
                       <LogOut size={12} color={Colors.secondary} />
-                      <Text style={styles.historyTimeText}>{formatTime(attendance.check_out_time)}</Text>
+                      <Text style={styles.historyTimeText}>{formatTime12h(attendance.check_out_time)}</Text>
                     </View>
                     <View style={styles.historyTimeRow}>
                       <LogIn size={12} color={Colors.success} />
-                      <Text style={styles.historyTimeText}>{formatTime(attendance.check_in_time)}</Text>
+                      <Text style={styles.historyTimeText}>{formatTime12h(attendance.check_in_time)}</Text>
                     </View>
                   </View>
                   <View style={styles.historyCardRight}>
@@ -658,6 +791,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.glassBorder,
   },
+  quickActionBtnAnnounce: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
   quickActionBtnPressed: {
     opacity: 0.85,
     transform: [{ scale: 0.98 }],
@@ -666,6 +803,94 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600" as const,
     color: Colors.textPrimary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: "flex-end",
+  },
+  modalBackdrop: {
+    flex: 1,
+  },
+  modalContent: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    maxHeight: "90%",
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: Colors.fillTertiary,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: Colors.textPrimary,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.fillQuaternary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.textPrimary,
+    marginBottom: 12,
+    textAlign: "right" as const,
+  },
+  formInput: {
+    backgroundColor: Colors.cardBackgroundSolid,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  textArea: {
+    minHeight: 100,
+    paddingTop: 14,
+  },
+  sendButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.primary,
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 8,
+    marginTop: 12,
+  },
+  sendButtonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  sendButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.white,
   },
   statCard: {
     flex: 1,
