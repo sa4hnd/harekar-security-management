@@ -22,7 +22,12 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
         "NSLocationAlwaysUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
         "CFBundleAllowMixedLocalizations": true,
-        "CFBundleDevelopmentRegion": "ku"
+        "CFBundleDevelopmentRegion": "ku",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "aps-environment": "production"
       },
       "config": {
         "usesNonExemptEncryption": false
@@ -41,7 +46,12 @@
         "WRITE_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "VIBRATE"
+        "ACCESS_BACKGROUND_LOCATION",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -71,7 +81,18 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە."
+          "locationWhenInUsePermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
+          "locationAlwaysAndWhenInUsePermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
+          "locationAlwaysPermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#007AFF"
         }
       ],
       [
