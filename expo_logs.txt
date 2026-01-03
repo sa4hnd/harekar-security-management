@@ -1082,3 +1082,23 @@ Call Stack
   TabsLayout (app/(tabs)/_layout.tsx:27:5)
   RootLayoutNav (app/_layout.tsx:14:5)
   RootLayout (app/_layout.tsx:27:7)
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundled 274ms node_modules/expo-router/entry.js (1 module)
+ WARN  The <CameraView> component does not support children. This may lead to inconsistent behaviour or crashes. If you want to render content on top of the Camera, consider using absolute positioning.
+ ERROR  Text strings must be rendered within a <Text> component. 
+
+Code: AttendanceDetails.tsx
+[0m [90m 120 |[39m                 [33m<[39m[33mText[39m style[33m=[39m{styles[33m.[39msectionTitle}[33m>[39m{t[33m.[39mcheckIn}[33m<[39m[33m/[39m[33mText[39m[33m>[39m
+ [90m 121 |[39m                 [33m<[39m[33mView[39m style[33m=[39m{[styles[33m.[39miconWrapper[33m,[39m { backgroundColor[33m:[39m [33mColors[39m[33m.[39msuccessLight }]}[33m>[39m
+[31m[1m>[22m[39m[90m 122 |[39m                   [33m<[39m[33mLogIn[39m size[33m=[39m{[35m16[39m} color[33m=[39m{[33mColors[39m[33m.[39msuccess} [33m/[39m[33m>[39m
+ [90m     |[39m                                                             [31m[1m^[22m[39m
+ [90m 123 |[39m                 [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 124 |[39m               [33m<[39m[33m/[39m[33mView[39m[33m>[39m
+ [90m 125 |[39m[0m
+Call Stack
+  AttendanceDetails (components/AttendanceDetails.tsx:122:61)
+  EmployeesScreen (app/(tabs)/employees/index.tsx:600:7)
+  EmployeesLayout (app/(tabs)/employees/_layout.tsx:4:10)
+  TabsLayout (app/(tabs)/_layout.tsx:27:5)
+  RootLayoutNav (app/_layout.tsx:14:5)
+  RootLayout (app/_layout.tsx:27:7)

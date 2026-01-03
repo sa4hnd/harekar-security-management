@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Shield, Mail, Phone, LogOut, ChevronLeft, Calendar, Users, Clock, Sparkles } from "lucide-react-native";
+import { Shield, Mail, Phone, LogOut, ChevronLeft, Calendar, Users, Clock, Sparkles, Settings, ChevronRight } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
@@ -120,6 +120,19 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
+          <Pressable
+            style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
+            onPress={() => router.push("/(tabs)/settings")}
+          >
+            <ChevronRight size={18} color={Colors.textTertiary} style={styles.chevronRtl} />
+            <View style={styles.settingsContent}>
+              <Text style={styles.settingsText}>{t.settings}</Text>
+            </View>
+            <View style={styles.settingsIcon}>
+              <Settings size={18} color={Colors.primary} />
+            </View>
+          </Pressable>
+
           <Pressable
             style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
             onPress={handleLogout}
@@ -258,6 +271,41 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.separator,
     marginHorizontal: 14,
+  },
+  settingsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.cardBackgroundSolid,
+    borderRadius: 18,
+    padding: 18,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    marginBottom: 12,
+  },
+  settingsButtonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  settingsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.tint.blue,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  settingsContent: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  settingsText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: Colors.textPrimary,
+  },
+  chevronRtl: {
+    transform: [{ scaleX: -1 }],
   },
   logoutButton: {
     flexDirection: "row",

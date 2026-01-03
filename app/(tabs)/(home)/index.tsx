@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MapPin, Clock, LogIn, LogOut, Shield, Users, ChevronRight, Calendar, Sparkles } from "lucide-react-native";
+import { MapPin, Clock, LogIn, LogOut, Shield, Users, ChevronRight, Calendar, Sparkles, BarChart3, AlertTriangle } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
@@ -324,6 +324,23 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          <View style={styles.quickActions}>
+            <Pressable
+              style={({ pressed }) => [styles.quickActionBtn, pressed && styles.quickActionBtnPressed]}
+              onPress={() => router.push("/(tabs)/reports")}
+            >
+              <BarChart3 size={20} color={Colors.primary} />
+              <Text style={styles.quickActionText}>{t.reports}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.quickActionBtn, pressed && styles.quickActionBtnPressed]}
+              onPress={() => router.push("/(tabs)/incidents")}
+            >
+              <AlertTriangle size={20} color={Colors.warning} />
+              <Text style={styles.quickActionText}>{t.incidents}</Text>
+            </Pressable>
+          </View>
+
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{t.today}</Text>
@@ -618,11 +635,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statsContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   statsRow: {
     flexDirection: "row",
     gap: 10,
+  },
+  quickActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 24,
+  },
+  quickActionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.cardBackgroundSolid,
+    borderRadius: 14,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  quickActionBtnPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.textPrimary,
   },
   statCard: {
     flex: 1,

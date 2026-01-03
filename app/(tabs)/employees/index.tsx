@@ -7,6 +7,7 @@ import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
 import { supabase, User, Attendance } from "@/lib/supabase";
 import AttendanceDetails from "@/components/AttendanceDetails";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 interface EmployeeWithStats extends User {
   todayAttendance?: Attendance;
@@ -30,6 +31,8 @@ export default function EmployeesScreen() {
   const [editShiftEnd, setEditShiftEnd] = useState("16:00");
   const [isCreating, setIsCreating] = useState(false);
   const [isSavingShift, setIsSavingShift] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<EmployeeWithStats | null>(null);
 
   const fetchEmployees = async () => {
     if (!user) return;
@@ -160,24 +163,22 @@ export default function EmployeesScreen() {
   };
 
   const handleDeleteEmployee = async (emp: EmployeeWithStats) => {
-    const doDelete = async () => {
-      try {
-        const { error } = await supabase.from("users").delete().eq("id", emp.id);
-        if (error) throw error;
-        setShowDetailModal(false);
-        setSelectedEmployee(null);
-        fetchEmployees();
-      } catch (error) {
-        console.error("Error deleting employee:", error);
-      }
-    };
+    setEmployeeToDelete(emp);
+    setShowDeleteConfirm(true);
+  };
 
-    if (Platform.OS === "web") {
-      if (confirm(`${t.confirmRemove}`)) {
-        doDelete();
-      }
-    } else {
-      doDelete();
+  const confirmDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+    try {
+      const { error } = await supabase.from("users").delete().eq("id", employeeToDelete.id);
+      if (error) throw error;
+      setShowDetailModal(false);
+      setSelectedEmployee(null);
+      setShowDeleteConfirm(false);
+      setEmployeeToDelete(null);
+      fetchEmployees();
+    } catch (error) {
+      console.error("Error deleting employee:", error);
     }
   };
 
@@ -603,6 +604,20 @@ export default function EmployeesScreen() {
         attendance={selectedAttendance}
         employeeName={selectedEmployee?.full_name}
         date={new Date().toISOString().split("T")[0]}
+      />
+
+      <ConfirmationModal
+        visible={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setEmployeeToDelete(null);
+        }}
+        onConfirm={confirmDeleteEmployee}
+        title={t.removeEmployee}
+        message={employeeToDelete ? `${t.confirmRemove} ${employeeToDelete.full_name}?` : t.confirmRemove}
+        confirmText={t.remove}
+        cancelText={t.cancel}
+        variant="danger"
       />
     </View>
   );

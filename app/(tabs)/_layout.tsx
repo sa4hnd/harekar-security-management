@@ -5,6 +5,7 @@ import { t } from "@/constants/translations";
 import { Colors } from "@/constants/colors";
 import { Platform, View, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
+import { BarChart3, AlertTriangle, Settings } from "lucide-react-native";
 
 function TabBarBackground() {
   if (Platform.OS === "ios") {
@@ -79,6 +80,16 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
+        name="incidents"
+        options={{
+          title: t.incidents,
+          tabBarIcon: ({ color }) => (
+            <AlertTriangle size={24} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="employees"
         options={{
           title: t.employees,
@@ -94,6 +105,17 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
+        name="reports"
+        options={{
+          title: t.reports,
+          tabBarIcon: ({ color }) => (
+            <BarChart3 size={24} color={color} />
+          ),
+          href: isSupervisor ? "/(tabs)/reports" : null,
+        }}
+      />
+
+      <Tabs.Screen
         name="profile"
         options={{
           title: t.profile,
@@ -104,6 +126,17 @@ export default function TabsLayout() {
               color={color}
             />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t.settings,
+          tabBarIcon: ({ color }) => (
+            <Settings size={24} color={color} />
+          ),
+          href: null,
         }}
       />
 
