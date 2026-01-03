@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard } from "react-native";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Users, Plus, Search, ChevronRight, Mail, Phone, Shield, X, Check, Trash2, Clock } from "lucide-react-native";
+import { Users, Plus, Search, ChevronRight, Mail, Phone, Shield, X, Check, Trash2, Clock, Edit3, Save, FileText, Eye, EyeOff, Camera } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
@@ -9,9 +9,13 @@ import { supabase, User, Attendance } from "@/lib/supabase";
 import AttendanceDetails from "@/components/AttendanceDetails";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { formatShiftTime12h, formatTime12h } from "@/lib/utils/time";
+import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
+import { Image } from "expo-image";
 
 interface EmployeeWithStats extends User {
   todayAttendance?: Attendance;
+  notes?: string;
 }
 
 export default function EmployeesScreen() {
@@ -27,13 +31,25 @@ export default function EmployeesScreen() {
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithStats | null>(null);
   const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
   const [showAttendanceDetails, setShowAttendanceDetails] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({ full_name: "", email: "", phone: "", password: "", shift_start: "08:00", shift_end: "16:00" });
+  const [newEmployee, setNewEmployee] = useState({ full_name: "", email: "", phone: "", password: "", shift_start: "08:00", shift_end: "16:00", notes: "" });
   const [editShiftStart, setEditShiftStart] = useState("08:00");
   const [editShiftEnd, setEditShiftEnd] = useState("16:00");
   const [isCreating, setIsCreating] = useState(false);
   const [isSavingShift, setIsSavingShift] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<EmployeeWithStats | null>(null);
+
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const fetchEmployees = async () => {
     if (!user) return;
@@ -88,6 +104,14 @@ export default function EmployeesScreen() {
     if (selectedEmployee) {
       setEditShiftStart(selectedEmployee.shift_start_time?.slice(0, 5) || "08:00");
       setEditShiftEnd(selectedEmployee.shift_end_time?.slice(0, 5) || "16:00");
+      setEditFullName(selectedEmployee.full_name);
+      setEditEmail(selectedEmployee.email);
+      setEditPhone(selectedEmployee.phone || "");
+      setEditNotes(selectedEmployee.notes || "");
+      setEditPassword("");
+      setEditAvatarUrl(selectedEmployee.avatar_url || null);
+      setIsEditMode(false);
+      setShowPassword(false);
     }
   }, [selectedEmployee]);
 
@@ -98,6 +122,69 @@ export default function EmployeesScreen() {
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
+  };
+
+  const handlePickImage = async () => {
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        // For now, store the local URI - in production you would upload to Supabase Storage
+        setEditAvatarUrl(asset.uri);
+        if (Platform.OS !== "web") {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        setEditAvatarUrl(asset.uri);
+        if (Platform.OS !== "web") {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    } catch (error) {
+      console.error("Error taking photo:", error);
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    }
   };
 
   const handleCreateEmployee = async () => {
@@ -124,7 +211,7 @@ export default function EmployeesScreen() {
         return;
       }
 
-      setNewEmployee({ full_name: "", email: "", phone: "", password: "", shift_start: "08:00", shift_end: "16:00" });
+      setNewEmployee({ full_name: "", email: "", phone: "", password: "", shift_start: "08:00", shift_end: "16:00", notes: "" });
       setShowAddModal(false);
       fetchEmployees();
     } catch (error) {
@@ -150,6 +237,10 @@ export default function EmployeesScreen() {
 
       if (error) throw error;
 
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
       fetchEmployees();
       setSelectedEmployee({
         ...selectedEmployee,
@@ -158,9 +249,82 @@ export default function EmployeesScreen() {
       });
     } catch (error) {
       console.error("Error saving shift:", error);
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     } finally {
       setIsSavingShift(false);
     }
+  };
+
+  const handleSaveDetails = async () => {
+    if (!selectedEmployee || !editFullName.trim() || !editEmail.trim()) return;
+    dismissKeyboard();
+    setIsSavingDetails(true);
+
+    try {
+      const updateData: Record<string, string | null> = {
+        full_name: editFullName.trim(),
+        email: editEmail.toLowerCase().trim(),
+        phone: editPhone.trim() || null,
+        notes: editNotes.trim() || null,
+      };
+
+      // Only update password if a new one was entered
+      if (editPassword.trim()) {
+        updateData.password_hash = editPassword;
+      }
+
+      // Update avatar URL if changed
+      if (editAvatarUrl !== selectedEmployee.avatar_url) {
+        updateData.avatar_url = editAvatarUrl;
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update(updateData)
+        .eq("id", selectedEmployee.id);
+
+      if (error) throw error;
+
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      // Update local state
+      setSelectedEmployee({
+        ...selectedEmployee,
+        full_name: editFullName.trim(),
+        email: editEmail.toLowerCase().trim(),
+        phone: editPhone.trim() || "",
+        notes: editNotes.trim() || "",
+        avatar_url: editAvatarUrl || undefined,
+      });
+
+      setIsEditMode(false);
+      setEditPassword("");
+      fetchEmployees();
+    } catch (error) {
+      console.error("Error saving employee details:", error);
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (selectedEmployee) {
+      setEditFullName(selectedEmployee.full_name);
+      setEditEmail(selectedEmployee.email);
+      setEditPhone(selectedEmployee.phone || "");
+      setEditNotes(selectedEmployee.notes || "");
+      setEditPassword("");
+      setEditAvatarUrl(selectedEmployee.avatar_url || null);
+    }
+    setIsEditMode(false);
+    setShowPassword(false);
   };
 
   const handleDeleteEmployee = async (emp: EmployeeWithStats) => {
@@ -309,7 +473,11 @@ export default function EmployeesScreen() {
                   </View>
                   <View style={styles.employeeRight}>
                     <View style={styles.employeeAvatar}>
-                      <Text style={styles.avatarText}>{getInitials(emp.full_name)}</Text>
+                      {emp.avatar_url ? (
+                        <Image source={{ uri: emp.avatar_url }} style={styles.avatarImage} contentFit="cover" />
+                      ) : (
+                        <Text style={styles.avatarText}>{getInitials(emp.full_name)}</Text>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -521,33 +689,184 @@ export default function EmployeesScreen() {
                   <View style={styles.detailAvatarWrapper}>
                     <View style={styles.detailAvatarGlow} />
                     <View style={styles.detailAvatar}>
-                      <Text style={styles.detailAvatarText}>{getInitials(selectedEmployee.full_name)}</Text>
+                      {editAvatarUrl ? (
+                        <Image source={{ uri: editAvatarUrl }} style={styles.detailAvatarImage} contentFit="cover" />
+                      ) : (
+                        <Text style={styles.detailAvatarText}>{getInitials(isEditMode ? editFullName : selectedEmployee.full_name)}</Text>
+                      )}
                     </View>
+                    {isEditMode && (
+                      <View style={styles.avatarEditButtons}>
+                        <Pressable
+                          style={({ pressed }) => [styles.avatarEditBtn, pressed && { opacity: 0.7 }]}
+                          onPress={handleTakePhoto}
+                        >
+                          <Camera size={16} color={Colors.white} />
+                        </Pressable>
+                        <Pressable
+                          style={({ pressed }) => [styles.avatarEditBtn, styles.avatarGalleryBtn, pressed && { opacity: 0.7 }]}
+                          onPress={handlePickImage}
+                        >
+                          <Plus size={16} color={Colors.white} />
+                        </Pressable>
+                      </View>
+                    )}
                   </View>
-                  <Text style={styles.detailName}>{selectedEmployee.full_name}</Text>
+                  {isEditMode ? (
+                    <TextInput
+                      style={styles.detailNameInput}
+                      value={editFullName}
+                      onChangeText={setEditFullName}
+                      placeholder={t.fullName}
+                      placeholderTextColor={Colors.textTertiary}
+                      textAlign="center"
+                    />
+                  ) : (
+                    <Text style={styles.detailName}>{selectedEmployee.full_name}</Text>
+                  )}
                   <View style={styles.detailBadge}>
                     <Shield size={14} color={Colors.white} />
                   </View>
                 </View>
 
+                {/* Edit Mode Toggle Button */}
+                <View style={styles.editModeSection}>
+                  {isEditMode ? (
+                    <View style={styles.editModeButtons}>
+                      <Pressable
+                        style={({ pressed }) => [styles.cancelEditBtn, pressed && { opacity: 0.7 }]}
+                        onPress={handleCancelEdit}
+                      >
+                        <X size={16} color={Colors.error} />
+                        <Text style={styles.cancelEditText}>{t.cancel}</Text>
+                      </Pressable>
+                      <Pressable
+                        style={({ pressed }) => [styles.saveEditBtn, pressed && { opacity: 0.7 }, isSavingDetails && { opacity: 0.5 }]}
+                        onPress={handleSaveDetails}
+                        disabled={isSavingDetails}
+                      >
+                        {isSavingDetails ? (
+                          <ActivityIndicator size="small" color={Colors.white} />
+                        ) : (
+                          <>
+                            <Save size={16} color={Colors.white} />
+                            <Text style={styles.saveEditText}>{t.save}</Text>
+                          </>
+                        )}
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Pressable
+                      style={({ pressed }) => [styles.editModeBtn, pressed && { opacity: 0.7 }]}
+                      onPress={() => setIsEditMode(true)}
+                    >
+                      <Edit3 size={16} color={Colors.primary} />
+                      <Text style={styles.editModeText}>{t.edit}</Text>
+                    </Pressable>
+                  )}
+                </View>
+
+                {/* Contact Info Card */}
                 <View style={styles.detailCard}>
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailText}>{selectedEmployee.email}</Text>
+                    {isEditMode ? (
+                      <TextInput
+                        style={styles.detailInput}
+                        value={editEmail}
+                        onChangeText={setEditEmail}
+                        placeholder={t.email}
+                        placeholderTextColor={Colors.textTertiary}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        textAlign="right"
+                      />
+                    ) : (
+                      <Text style={styles.detailText}>{selectedEmployee.email}</Text>
+                    )}
                     <View style={[styles.detailIcon, { backgroundColor: Colors.tint.blue }]}>
                       <Mail size={16} color={Colors.primary} />
                     </View>
                   </View>
-                  {selectedEmployee.phone && (
+
+                  <View style={styles.detailDivider} />
+
+                  <View style={styles.detailRow}>
+                    {isEditMode ? (
+                      <TextInput
+                        style={styles.detailInput}
+                        value={editPhone}
+                        onChangeText={setEditPhone}
+                        placeholder={t.phone}
+                        placeholderTextColor={Colors.textTertiary}
+                        keyboardType="phone-pad"
+                        textAlign="right"
+                      />
+                    ) : (
+                      <Text style={styles.detailText}>{selectedEmployee.phone || "-"}</Text>
+                    )}
+                    <View style={[styles.detailIcon, { backgroundColor: Colors.tint.green }]}>
+                      <Phone size={16} color={Colors.success} />
+                    </View>
+                  </View>
+
+                  {isEditMode && (
                     <>
                       <View style={styles.detailDivider} />
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailText}>{selectedEmployee.phone}</Text>
-                        <View style={[styles.detailIcon, { backgroundColor: Colors.tint.green }]}>
-                          <Phone size={16} color={Colors.success} />
+                        <View style={styles.passwordInputWrapper}>
+                          <Pressable
+                            style={styles.eyeButton}
+                            onPress={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff size={18} color={Colors.textTertiary} />
+                            ) : (
+                              <Eye size={18} color={Colors.textTertiary} />
+                            )}
+                          </Pressable>
+                          <TextInput
+                            style={[styles.detailInput, { flex: 1 }]}
+                            value={editPassword}
+                            onChangeText={setEditPassword}
+                            placeholder={t.newPassword}
+                            placeholderTextColor={Colors.textTertiary}
+                            secureTextEntry={!showPassword}
+                            textAlign="right"
+                          />
+                        </View>
+                        <View style={[styles.detailIcon, { backgroundColor: Colors.tint.purple }]}>
+                          <Shield size={16} color={Colors.secondary} />
                         </View>
                       </View>
                     </>
                   )}
+                </View>
+
+                {/* Notes Section */}
+                <View style={styles.notesSection}>
+                  <View style={styles.notesSectionHeader}>
+                    <FileText size={16} color={Colors.textSecondary} />
+                    <Text style={styles.sectionLabel}>{t.notes}</Text>
+                  </View>
+                  <View style={styles.notesCard}>
+                    {isEditMode ? (
+                      <TextInput
+                        style={styles.notesInput}
+                        value={editNotes}
+                        onChangeText={setEditNotes}
+                        placeholder={t.addNote}
+                        placeholderTextColor={Colors.textTertiary}
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                        textAlign="right"
+                      />
+                    ) : (
+                      <Text style={[styles.notesText, !selectedEmployee.notes && styles.notesPlaceholder]}>
+                        {selectedEmployee.notes || t.noNotes}
+                      </Text>
+                    )}
+                  </View>
                 </View>
 
                 <View style={styles.shiftSection}>
@@ -1136,5 +1455,161 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.error,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 24,
+  },
+  detailAvatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 45,
+  },
+  avatarEditButtons: {
+    position: "absolute",
+    bottom: -5,
+    flexDirection: "row",
+    gap: 8,
+  },
+  avatarEditBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: Colors.backgroundSecondary,
+  },
+  avatarGalleryBtn: {
+    backgroundColor: Colors.success,
+  },
+  detailNameInput: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    marginBottom: 10,
+    letterSpacing: -0.3,
+    textAlign: "center",
+    backgroundColor: Colors.cardBackgroundSolid,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary + "40",
+    minWidth: 200,
+  },
+  editModeSection: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  editModeButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  editModeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: Colors.tint.blue,
+    borderRadius: 12,
+  },
+  editModeText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  cancelEditBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: Colors.errorLight,
+    borderRadius: 12,
+  },
+  cancelEditText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.error,
+  },
+  saveEditBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+  },
+  saveEditText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.white,
+  },
+  detailInput: {
+    fontSize: 15,
+    color: Colors.textPrimary,
+    textAlign: "right",
+    flex: 1,
+    backgroundColor: Colors.backgroundTertiary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.primary + "30",
+  },
+  passwordInputWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  eyeButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.fillQuaternary,
+  },
+  notesSection: {
+    marginBottom: 20,
+  },
+  notesSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginBottom: 12,
+  },
+  notesCard: {
+    backgroundColor: Colors.cardBackgroundSolid,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    minHeight: 80,
+  },
+  notesInput: {
+    fontSize: 15,
+    color: Colors.textPrimary,
+    textAlign: "right",
+    minHeight: 80,
+    backgroundColor: Colors.backgroundTertiary,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary + "30",
+  },
+  notesText: {
+    fontSize: 15,
+    color: Colors.textPrimary,
+    textAlign: "right",
+    lineHeight: 22,
+  },
+  notesPlaceholder: {
+    color: Colors.textTertiary,
+    fontStyle: "italic",
   },
 });

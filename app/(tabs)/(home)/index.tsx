@@ -31,7 +31,15 @@ export default function HomeScreen() {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [announcementPriority, setAnnouncementPriority] = useState<"normal" | "urgent">("normal");
   const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
+
+  const announcementTemplates = [
+    { title: t.shiftReminder || "Shift Reminder", message: t.shiftReminderMessage || "Please prepare for your upcoming shift and arrive on time.", priority: "normal" as const },
+    { title: t.emergencyAlert || "Emergency Alert", message: t.emergencyAlertMessage || "Urgent: Please respond immediately and check in with your supervisor.", priority: "urgent" as const },
+    { title: t.meetingNotice || "Meeting Notice", message: t.meetingNoticeMessage || "There will be a team meeting. Please attend on time.", priority: "normal" as const },
+    { title: t.scheduleChange || "Schedule Change", message: t.scheduleChangeMessage || "There has been a change to the schedule. Please check your shifts.", priority: "urgent" as const },
+  ];
 
   const isSupervisor = user?.role === "supervisor";
 
@@ -271,10 +279,11 @@ export default function HomeScreen() {
     }
 
     try {
+      const priorityEmoji = announcementPriority === "urgent" ? "🚨 " : "";
       await sendImmediateNotification(
-        announcementTitle.trim(),
+        priorityEmoji + announcementTitle.trim(),
         announcementMessage.trim(),
-        { type: "announcement", from: user?.full_name }
+        { type: "announcement", from: user?.full_name, priority: announcementPriority }
       );
 
       if (Platform.OS !== "web") {
@@ -283,6 +292,7 @@ export default function HomeScreen() {
 
       setAnnouncementTitle("");
       setAnnouncementMessage("");
+      setAnnouncementPriority("normal");
       setShowAnnouncementModal(false);
     } catch (error) {
       console.error("Error sending announcement:", error);
@@ -291,6 +301,15 @@ export default function HomeScreen() {
       }
     } finally {
       setIsSendingAnnouncement(false);
+    }
+  };
+
+  const handleSelectTemplate = (template: typeof announcementTemplates[0]) => {
+    setAnnouncementTitle(template.title);
+    setAnnouncementMessage(template.message);
+    setAnnouncementPriority(template.priority);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 
@@ -468,7 +487,7 @@ export default function HomeScreen() {
                 setShowAnnouncementModal(false);
               }}
             />
-            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
+            <View style={[styles.announcementModalContent, { paddingBottom: insets.bottom + 20 }]}>
               <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
                 <Pressable
@@ -480,14 +499,82 @@ export default function HomeScreen() {
                 >
                   <X size={20} color={Colors.textPrimary} />
                 </Pressable>
-                <Text style={styles.modalTitle}>{t.sendAnnouncement}</Text>
+                <View style={styles.announcementHeaderRight}>
+                  <Bell size={20} color={Colors.primary} />
+                  <Text style={styles.modalTitle}>{t.sendAnnouncement}</Text>
+                </View>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.announcementScrollContent}
+              >
+                {/* Quick Templates Section */}
+                <View style={styles.templatesSection}>
+                  <Text style={styles.templatesSectionTitle}>{t.quickTemplates || "Quick Templates"}</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templatesScroll}>
+                    <View style={styles.templatesRow}>
+                      {announcementTemplates.map((template, index) => (
+                        <Pressable
+                          key={index}
+                          style={({ pressed }) => [
+                            styles.templateChip,
+                            template.priority === "urgent" && styles.templateChipUrgent,
+                            pressed && styles.templateChipPressed,
+                          ]}
+                          onPress={() => handleSelectTemplate(template)}
+                        >
+                          <Text style={[
+                            styles.templateChipText,
+                            template.priority === "urgent" && styles.templateChipTextUrgent,
+                          ]} numberOfLines={1}>
+                            {template.title}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+
+                {/* Priority Selector */}
+                <View style={styles.prioritySection}>
+                  <Text style={styles.formLabel}>{t.priority}</Text>
+                  <View style={styles.prioritySelector}>
+                    <Pressable
+                      style={[
+                        styles.priorityOption,
+                        announcementPriority === "normal" && styles.priorityOptionActive,
+                      ]}
+                      onPress={() => setAnnouncementPriority("normal")}
+                    >
+                      <Text style={[
+                        styles.priorityOptionText,
+                        announcementPriority === "normal" && styles.priorityOptionTextActive,
+                      ]}>{t.normal}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[
+                        styles.priorityOption,
+                        styles.priorityOptionUrgent,
+                        announcementPriority === "urgent" && styles.priorityOptionUrgentActive,
+                      ]}
+                      onPress={() => setAnnouncementPriority("urgent")}
+                    >
+                      <AlertTriangle size={14} color={announcementPriority === "urgent" ? Colors.white : Colors.warning} />
+                      <Text style={[
+                        styles.priorityOptionText,
+                        styles.priorityOptionTextUrgent,
+                        announcementPriority === "urgent" && styles.priorityOptionTextUrgentActive,
+                      ]}>{t.urgent}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
                 <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>{t.announcementTitle} *</Text>
                   <TextInput
-                    style={styles.formInput}
+                    style={[styles.formInput, styles.announcementInput]}
                     placeholder={t.announcementTitle}
                     placeholderTextColor={Colors.textTertiary}
                     value={announcementTitle}
@@ -500,7 +587,7 @@ export default function HomeScreen() {
                 <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>{t.announcementMessage} *</Text>
                   <TextInput
-                    style={[styles.formInput, styles.textArea]}
+                    style={[styles.formInput, styles.announcementTextArea]}
                     placeholder={t.announcementMessage}
                     placeholderTextColor={Colors.textTertiary}
                     value={announcementMessage}
@@ -512,11 +599,19 @@ export default function HomeScreen() {
                   />
                 </View>
 
+                <View style={styles.announcementInfo}>
+                  <Users size={14} color={Colors.textTertiary} />
+                  <Text style={styles.announcementInfoText}>
+                    {t.sendToAll || "Will be sent to all security personnel"}
+                  </Text>
+                </View>
+
                 <Pressable
                   style={({ pressed }) => [
                     styles.sendButton,
+                    announcementPriority === "urgent" && styles.sendButtonUrgent,
                     pressed && styles.sendButtonPressed,
-                    isSendingAnnouncement && styles.sendButtonDisabled,
+                    (isSendingAnnouncement || !announcementTitle.trim() || !announcementMessage.trim()) && styles.sendButtonDisabled,
                   ]}
                   onPress={handleSendAnnouncement}
                   disabled={isSendingAnnouncement || !announcementTitle.trim() || !announcementMessage.trim()}
@@ -891,6 +986,137 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600" as const,
     color: Colors.white,
+  },
+  sendButtonUrgent: {
+    backgroundColor: Colors.warning,
+  },
+  announcementModalContent: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    maxHeight: "92%",
+  },
+  announcementHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  announcementScrollContent: {
+    paddingBottom: 20,
+  },
+  templatesSection: {
+    marginBottom: 20,
+  },
+  templatesSectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginBottom: 10,
+    textAlign: "right",
+  },
+  templatesScroll: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+  },
+  templatesRow: {
+    flexDirection: "row",
+    gap: 10,
+    paddingRight: 20,
+  },
+  templateChip: {
+    backgroundColor: Colors.tint.blue,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary + "30",
+  },
+  templateChipUrgent: {
+    backgroundColor: Colors.warningLight,
+    borderColor: Colors.warning + "30",
+  },
+  templateChipPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+  templateChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  templateChipTextUrgent: {
+    color: Colors.warning,
+  },
+  prioritySection: {
+    marginBottom: 20,
+  },
+  prioritySelector: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  priorityOption: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.cardBackgroundSolid,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  priorityOptionActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  priorityOptionUrgent: {
+    borderColor: Colors.warning + "40",
+  },
+  priorityOptionUrgentActive: {
+    backgroundColor: Colors.warning,
+    borderColor: Colors.warning,
+  },
+  priorityOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  priorityOptionTextActive: {
+    color: Colors.white,
+  },
+  priorityOptionTextUrgent: {
+    color: Colors.warning,
+  },
+  priorityOptionTextUrgentActive: {
+    color: Colors.white,
+  },
+  announcementInput: {
+    borderWidth: 2,
+    borderColor: Colors.glassBorder,
+  },
+  announcementTextArea: {
+    minHeight: 120,
+    paddingTop: 14,
+    borderWidth: 2,
+    borderColor: Colors.glassBorder,
+  },
+  announcementInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.tint.blue,
+    borderRadius: 12,
+  },
+  announcementInfoText: {
+    fontSize: 13,
+    color: Colors.primary,
+    fontWeight: "500",
   },
   statCard: {
     flex: 1,
