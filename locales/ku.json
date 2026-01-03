@@ -1,10 +1,10 @@
 {
   "CFBundleDisplayName": "هاریکار گروپ",
   "CFBundleName": "هاریکار گروپ",
-  "NSCameraUsageDescription": "ئەم بەرنامەیە پێویستی بە دەستگەیشتن بە کامێرا هەیە بۆ گرتنی وێنەی ئامادەبوون و ڕاپۆرتکردنی ڕووداو.",
-  "NSPhotoLibraryUsageDescription": "ئەم بەرنامەیە پێویستی بە دەستگەیشتن بە گالێری وێنە هەیە بۆ هەڵبژاردنی وێنەی پرۆفایل.",
-  "NSPhotoLibraryAddUsageDescription": "ئەم بەرنامەیە پێویستی بە ڕێگەپێدان هەیە بۆ پاشەکەوتکردنی وێنەکان.",
-  "NSLocationWhenInUseUsageDescription": "ئەم بەرنامەیە پێویستی بە دەستگەیشتن بە شوێن هەیە بۆ پشتڕاستکردنەوەی شوێنی ئامادەبوونت.",
-  "NSLocationAlwaysAndWhenInUseUsageDescription": "ئەم بەرنامەیە پێویستی بە دەستگەیشتن بە شوێن هەیە بۆ پشتڕاستکردنەوەی شوێنی ئامادەبوونت.",
-  "NSLocationAlwaysUsageDescription": "ئەم بەرنامەیە پێویستی بە دەستگەیشتن بە شوێن هەیە بۆ پشتڕاستکردنەوەی شوێنی ئامادەبوونت."
+  "NSCameraUsageDescription": "ئەڤ بەرنامە پێدڤی ب دەستوورا کامێرێ هەیە بۆ گرتنا وێنەیێ ئامادەبوونێ و ڕاپۆرتکرنا ڕوودانان.",
+  "NSPhotoLibraryUsageDescription": "ئەڤ بەرنامە پێدڤی ب دەستگەهشتن ب گالێریێ هەیە بۆ هەلبژارتنا وێنەیێ پرۆفایلی.",
+  "NSPhotoLibraryAddUsageDescription": "ئەڤ بەرنامە پێدڤی ب دەستوورێ هەیە بۆ پاراستنا وێنەیان.",
+  "NSLocationWhenInUseUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
+  "NSLocationAlwaysAndWhenInUseUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
+  "NSLocationAlwaysUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە."
 }
