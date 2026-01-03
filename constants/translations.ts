@@ -220,5 +220,8 @@ export const t = {
   scheduleChangeMessage: "گۆڕانکاری لە خشتەکە کراوە. تکایە شیفتەکانت بپشکنە",
   changePhoto: "گۆڕینی وێنە",
   profilePicture: "وێنەی پرۆفایل",
-  cancel: "پاشگەزبوونەوە",
+  clearData: "سڕینەوەی داتا",
+  clearDataDesc: "سڕینەوەی هەموو داتاکان و گەڕانەوە بۆ سەرەتا",
+  clearDataConfirm: "دڵنیای لە سڕینەوەی هەموو داتاکان؟",
+  dataCleared: "داتاکان سڕانەوە",
 };

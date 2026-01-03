@@ -13,6 +13,7 @@ interface AuthActions {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   setOnboardingComplete: () => Promise<void>;
+  resetAllData: () => Promise<void>;
 }
 
 type AuthContextType = AuthState & AuthActions;
@@ -151,6 +152,21 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextType>(() => 
     }
   };
 
+  const resetAllData = async () => {
+    try {
+      // Clear all stored data
+      await removeStorageItem("harekar_user");
+      await removeStorageItem("harekar_onboarding_complete");
+      await removeStorageItem("app_settings");
+
+      // Reset state
+      setUser(null);
+      setHasSeenOnboarding(false);
+    } catch (error) {
+      console.error("Error resetting data:", error);
+    }
+  };
+
   return {
     user,
     isLoading,
@@ -159,5 +175,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextType>(() => 
     login,
     logout,
     setOnboardingComplete,
+    resetAllData,
   };
 });

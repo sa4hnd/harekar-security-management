@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform } from "react-native";
 import { useState, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Settings, Bell, Moon, Sun, Globe, Shield, ChevronRight, Info, MessageSquare, FileText, HelpCircle } from "lucide-react-native";
+import { Settings, Bell, Moon, Sun, Globe, Shield, ChevronRight, Info, MessageSquare, FileText, HelpCircle, Trash2 } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 interface AppSettings {
   notificationsEnabled: boolean;
@@ -24,8 +26,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, resetAllData } = useAuth();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [showClearDataModal, setShowClearDataModal] = useState(false);
   const isSupervisor = user?.role === "supervisor";
 
   useEffect(() => {
@@ -54,6 +57,15 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error("Error saving settings:", error);
     }
+  };
+
+  const handleClearData = async () => {
+    if (Platform.OS !== "web") {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+    await resetAllData();
+    setShowClearDataModal(false);
+    router.replace("/onboarding");
   };
 
   return (
@@ -220,6 +232,30 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Trash2 size={16} color={Colors.error} />
+            <Text style={styles.sectionTitle}>{t.clearData}</Text>
+          </View>
+          <View style={styles.card}>
+            <Pressable
+              style={({ pressed }) => [styles.clearDataRow, pressed && styles.linkRowPressed]}
+              onPress={() => setShowClearDataModal(true)}
+            >
+              <ChevronRight size={18} color={Colors.error} style={styles.chevron} />
+              <View style={styles.settingInfo}>
+                <Text style={styles.clearDataLabel}>{t.clearData}</Text>
+                <Text style={styles.clearDataDescription}>
+                  {(t as Record<string, string>).clearDataDesc || "Clear all data and show onboarding"}
+                </Text>
+              </View>
+              <View style={[styles.settingIcon, { backgroundColor: Colors.errorLight }]}>
+                <Trash2 size={18} color={Colors.error} />
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>{t.appName}</Text>
           <Text style={styles.versionText}>{t.version} 1.0.0</Text>
@@ -227,6 +263,17 @@ export default function SettingsScreen() {
 
         <View style={{ height: insets.bottom + 100 }} />
       </ScrollView>
+
+      <ConfirmationModal
+        visible={showClearDataModal}
+        onClose={() => setShowClearDataModal(false)}
+        onConfirm={handleClearData}
+        title={t.clearData}
+        message={(t as Record<string, string>).clearDataConfirm || "Are you sure you want to clear all data?"}
+        confirmText={t.confirm}
+        cancelText={t.cancel}
+        variant="danger"
+      />
     </View>
   );
 }
@@ -350,5 +397,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textTertiary,
     marginTop: 4,
+  },
+  clearDataRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    gap: 14,
+  },
+  clearDataLabel: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    color: Colors.error,
+  },
+  clearDataDescription: {
+    fontSize: 12,
+    color: Colors.textTertiary,
+    marginTop: 2,
+    textAlign: "right",
   },
 });

@@ -1389,3 +1389,28 @@ Import stack:
 
  app (require.context)
 
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundled 5202ms node_modules/expo-router/entry.js (1 module)
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ LOG  Push token not available (preview mode) - local notifications still work
+iOS node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundled 202ms node_modules/expo-router/entry.js (1 module)
+ WARN  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ LOG  Push token not available (preview mode) - local notifications still work
+ ERROR  Error saving employee details: {"code": "PGRST204", "details": null, "hint": null, "message": "Could not find the 'notes' column of 'users' in the schema cache"} 
+
+Code: index.tsx
+[0m [90m 306 |[39m       fetchEmployees()[33m;[39m
+ [90m 307 |[39m     } [36mcatch[39m (error) {
+[31m[1m>[22m[39m[90m 308 |[39m       console[33m.[39merror([32m"Error saving employee details:"[39m[33m,[39m error)[33m;[39m
+ [90m     |[39m                    [31m[1m^[22m[39m
+ [90m 309 |[39m       [36mif[39m ([33mPlatform[39m[33m.[39m[33mOS[39m [33m!==[39m [32m"web"[39m) {
+ [90m 310 |[39m         [36mawait[39m [33mHaptics[39m[33m.[39mnotificationAsync([33mHaptics[39m[33m.[39m[33mNotificationFeedbackType[39m[33m.[39m[33mError[39m)[33m;[39m
+ [90m 311 |[39m       }[0m
+Call Stack
+  handleSaveDetails (app/(tabs)/employees/index.tsx:308:20)
