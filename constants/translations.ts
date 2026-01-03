@@ -1,5 +1,5 @@
 export const t = {
-  appName: "گروپی هەرەکار",
+  appName: "هاریکار گروپ",
   securityManagement: "سیستەمی پاسەوانی",
 
   goodMorning: "بەیانی باش",
@@ -19,7 +19,7 @@ export const t = {
   demoAccounts: "هەژمارە تاقیکردنەوەکان",
 
   welcome: "بەخێربێن",
-  welcomeToHarekar: "بەخێربێن بۆ هەرەکار",
+  welcomeToHarekar: "بەخێربێن بۆ هاریکار گروپ",
   trustedPartner: "هاوبەشی متمانەپێکراو",
   streamlineOperations: "کارەکانی ئەمنیەت ڕێکبخە",
   trackAttendance: "تۆمارکردنی ئامادەبوون",
