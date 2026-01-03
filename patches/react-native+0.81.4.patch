@@ -1,0 +1,401 @@
+diff --git a/node_modules/react-native/Libraries/LogBox/Data/LogBoxData.js b/node_modules/react-native/Libraries/LogBox/Data/LogBoxData.js
+index 37fb35b..b20ade5 100644
+--- a/node_modules/react-native/Libraries/LogBox/Data/LogBoxData.js
++++ b/node_modules/react-native/Libraries/LogBox/Data/LogBoxData.js
+@@ -188,9 +188,10 @@ function appendNewLog(newLog: LogBoxLog) {
+         handleUpdate();
+       }
+     });
+-  } else if (newLog.level === 'syntax') {
+-    logs.add(newLog);
+-    setSelectedLog(logs.size - 1);
++  // Make syntax errors dismissible - Vibracode
++  // } else if (newLog.level === 'syntax') {
++  //   logs.add(newLog);
++  //   setSelectedLog(logs.size - 1);
+   } else {
+     logs.add(newLog);
+     handleUpdate();
+diff --git a/node_modules/react-native/Libraries/LogBox/UI/LogBoxInspector.js b/node_modules/react-native/Libraries/LogBox/UI/LogBoxInspector.js
+index be889b0..422b860 100644
+--- a/node_modules/react-native/Libraries/LogBox/UI/LogBoxInspector.js
++++ b/node_modules/react-native/Libraries/LogBox/UI/LogBoxInspector.js
+@@ -10,15 +10,17 @@
+ 
+ import Keyboard from '../../Components/Keyboard/Keyboard';
+ import View from '../../Components/View/View';
++import Text from '../../Text/Text';
++import TouchableOpacity from '../../Components/Touchable/TouchableOpacity';
++import ScrollView from '../../Components/ScrollView/ScrollView';
++import SafeAreaView from '../../Components/SafeAreaView/SafeAreaView';
+ import StyleSheet from '../../StyleSheet/StyleSheet';
+ import * as LogBoxData from '../Data/LogBoxData';
+ import LogBoxLog, {type LogLevel} from '../Data/LogBoxLog';
+-import LogBoxInspectorBody from './LogBoxInspectorBody';
+-import LogBoxInspectorFooter from './LogBoxInspectorFooter';
+-import LogBoxInspectorHeader from './LogBoxInspectorHeader';
+ import * as LogBoxStyle from './LogBoxStyle';
+ import * as React from 'react';
+-import {useEffect} from 'react';
++import {useEffect, useState} from 'react';
++import * as Clipboard from 'expo-clipboard';
+ 
+ type Props = $ReadOnly<{
+   onDismiss: () => void,
+@@ -31,6 +33,7 @@ type Props = $ReadOnly<{
+ 
+ export default function LogBoxInspector(props: Props): React.Node {
+   const {logs, selectedIndex} = props;
++  const [copySuccess, setCopySuccess] = useState(false);
+   let log = logs[selectedIndex];
+ 
+   useEffect(() => {
+@@ -39,44 +42,134 @@ export default function LogBoxInspector(props: Props): React.Node {
+     }
+   }, [log]);
+ 
+-  useEffect(() => {
+-    // Optimistically symbolicate the last and next logs.
+-    if (logs.length > 1) {
+-      const selected = selectedIndex;
+-      const lastIndex = logs.length - 1;
+-      const prevIndex = selected - 1 < 0 ? lastIndex : selected - 1;
+-      const nextIndex = selected + 1 > lastIndex ? 0 : selected + 1;
+-      LogBoxData.symbolicateLogLazy(logs[prevIndex]);
+-      LogBoxData.symbolicateLogLazy(logs[nextIndex]);
+-    }
+-  }, [logs, selectedIndex]);
+-
+   useEffect(() => {
+     Keyboard.dismiss();
+   }, []);
+ 
+-  function _handleRetry() {
+-    LogBoxData.retrySymbolicateLogNow(log);
+-  }
++  const getErrorText = () => {
++    if (!log) return '';
++
++    let errorText = '';
++
++    // Error message
++    errorText += `🚨 Error: ${log.message?.content || 'Unknown error'}`;
++
++    // Code frame - most important for fixing
++    if (log.codeFrame) {
++      const cleanCodeFrame = log.codeFrame.content.replace(/\x1b\[[0-9;]*m/g, '');
++      errorText += `\n\n📍 Code:\n${cleanCodeFrame}`;
++    }
++
++    // Simplified stack trace
++    if (log.stack && Array.isArray(log.stack)) {
++      const relevantFrames = log.stack.slice(0, 3).map(frame => {
++        const file = frame.file || 'unknown';
++        const method = frame.methodName || 'unknown';
++        const line = frame.lineNumber || 'unknown';
++        return `  at ${method} (${file}:${line})`;
++      }).join('\n');
++
++      errorText += `\n\n🔍 Stack:\n${relevantFrames}`;
++    }
++
++    return errorText;
++  };
++
++  const handleCopyError = async () => {
++    try {
++      const errorText = getErrorText();
++      await Clipboard.setStringAsync(errorText);
++      setCopySuccess(true);
++      setTimeout(() => setCopySuccess(false), 3000);
++    } catch (error) {
++      setCopySuccess(false);
++    }
++  };
++
++  const getDisplayError = () => {
++    if (!log) return 'Unknown error';
++
++    let displayText = '';
++
++    // Add the error message
++    if (log.message?.content) {
++      displayText = log.message.content;
++    }
++
++    // Add code frame if available
++    if (log.codeFrame?.content) {
++      const cleanCodeFrame = log.codeFrame.content.replace(/\x1b\[[0-9;]*m/g, '');
++      if (displayText) {
++        displayText += '\n\n' + cleanCodeFrame;
++      } else {
++        displayText = cleanCodeFrame;
++      }
++    }
++
++    return displayText || 'Unknown error';
++  };
+ 
+   if (log == null) {
+     return null;
+   }
+ 
++  // Vibracode error screen design
+   return (
+-    <View id="logbox_inspector" style={styles.root}>
+-      <LogBoxInspectorHeader
+-        onSelectIndex={props.onChangeSelectedIndex}
+-        selectedIndex={selectedIndex}
+-        total={logs.length}
+-        level={log.level}
+-      />
+-      <LogBoxInspectorBody log={log} onRetry={_handleRetry} />
+-      <LogBoxInspectorFooter
+-        onDismiss={props.onDismiss}
+-        onMinimize={props.onMinimize}
+-        level={log.level}
+-      />
++    <View id="logbox_inspector" style={styles.container}>
++      <SafeAreaView style={styles.safeArea}>
++        <ScrollView
++          style={styles.scrollView}
++          contentContainerStyle={styles.scrollContent}
++          showsVerticalScrollIndicator={false}
++        >
++          {/* Warning Icon */}
++          <View style={styles.warningIconContainer}>
++            <Text style={styles.warningIcon}>⚠️</Text>
++          </View>
++
++          {/* Title */}
++          <Text style={styles.title}>The app needs to be fixed!</Text>
++
++          {/* Subtitle */}
++          <Text style={styles.subtitle}>
++            Your app can't run due to a build error. Share this with Vibracode to get it resolved.
++          </Text>
++
++          {/* Error Label with Copy Button */}
++          <View style={styles.errorLabelRow}>
++            <Text style={styles.errorLabel}>The error to be fixed 👇</Text>
++            <TouchableOpacity style={styles.copyIconButton} onPress={handleCopyError}>
++              <Text style={styles.copyIconText}>{copySuccess ? '✓' : '⧉'}</Text>
++            </TouchableOpacity>
++          </View>
++
++          {/* Error Code Block */}
++          <View style={styles.errorCodeBlock}>
++            <ScrollView
++              style={styles.errorCodeScroll}
++              nestedScrollEnabled={true}
++              showsVerticalScrollIndicator={true}
++            >
++              <Text style={styles.errorCodeText}>
++                {getDisplayError()}
++              </Text>
++            </ScrollView>
++          </View>
++
++          {/* Copy Button */}
++          <TouchableOpacity style={styles.fixButton} onPress={handleCopyError}>
++            <Text style={styles.fixButtonText}>
++              {copySuccess ? '✓ Copied!' : 'Copy & Paste in Chat'}
++            </Text>
++          </TouchableOpacity>
++
++          {/* Dismiss Button */}
++          <TouchableOpacity style={styles.dismissButton} onPress={props.onDismiss}>
++            <Text style={styles.dismissButtonText}>✕  Dismiss</Text>
++          </TouchableOpacity>
++
++        </ScrollView>
++      </SafeAreaView>
+     </View>
+   );
+ }
+@@ -86,4 +179,112 @@ const styles = StyleSheet.create({
+     flex: 1,
+     backgroundColor: LogBoxStyle.getTextColor(),
+   },
++  container: {
++    flex: 1,
++    backgroundColor: '#000000',
++  },
++  safeArea: {
++    flex: 1,
++  },
++  scrollView: {
++    flex: 1,
++  },
++  scrollContent: {
++    flexGrow: 1,
++    alignItems: 'center',
++    paddingHorizontal: 24,
++    paddingTop: 60,
++    paddingBottom: 40,
++  },
++  warningIconContainer: {
++    marginBottom: 24,
++  },
++  warningIcon: {
++    fontSize: 56,
++  },
++  title: {
++    fontSize: 28,
++    fontWeight: '700',
++    color: '#F97316',
++    textAlign: 'center',
++    marginBottom: 12,
++  },
++  subtitle: {
++    fontSize: 16,
++    color: '#9CA3AF',
++    textAlign: 'center',
++    lineHeight: 24,
++    marginBottom: 32,
++    paddingHorizontal: 20,
++  },
++  errorLabelRow: {
++    flexDirection: 'row',
++    alignItems: 'center',
++    justifyContent: 'space-between',
++    width: '100%',
++    marginBottom: 12,
++  },
++  errorLabel: {
++    fontSize: 16,
++    fontWeight: '600',
++    color: '#F97316',
++  },
++  copyIconButton: {
++    width: 40,
++    height: 40,
++    borderRadius: 8,
++    backgroundColor: '#374151',
++    justifyContent: 'center',
++    alignItems: 'center',
++  },
++  copyIconText: {
++    fontSize: 18,
++    color: '#9CA3AF',
++  },
++  errorCodeBlock: {
++    width: '100%',
++    backgroundColor: '#1F1F1F',
++    borderRadius: 12,
++    borderLeftWidth: 3,
++    borderLeftColor: '#F97316',
++    marginBottom: 24,
++    maxHeight: 200,
++    overflow: 'hidden',
++  },
++  errorCodeScroll: {
++    padding: 16,
++  },
++  errorCodeText: {
++    fontSize: 13,
++    fontFamily: 'Menlo',
++    color: '#EF4444',
++    lineHeight: 20,
++  },
++  fixButton: {
++    width: '100%',
++    backgroundColor: '#F97316',
++    paddingVertical: 16,
++    borderRadius: 12,
++    alignItems: 'center',
++    marginBottom: 12,
++  },
++  fixButtonText: {
++    fontSize: 17,
++    fontWeight: '600',
++    color: '#000000',
++  },
++  dismissButton: {
++    width: '100%',
++    backgroundColor: '#1F1F1F',
++    paddingVertical: 16,
++    borderRadius: 12,
++    alignItems: 'center',
++    flexDirection: 'row',
++    justifyContent: 'center',
++  },
++  dismissButtonText: {
++    fontSize: 17,
++    fontWeight: '500',
++    color: '#9CA3AF',
++  },
+ });
+diff --git a/node_modules/react-native/Libraries/LogBox/UI/LogBoxStyle.js b/node_modules/react-native/Libraries/LogBox/UI/LogBoxStyle.js
+index 3ac3210..58a7f90 100644
+--- a/node_modules/react-native/Libraries/LogBox/UI/LogBoxStyle.js
++++ b/node_modules/react-native/Libraries/LogBox/UI/LogBoxStyle.js
+@@ -9,55 +9,55 @@
+  */
+ 
+ export function getBackgroundColor(opacity?: number): string {
+-  return `rgba(51, 51, 51, ${opacity == null ? 1 : opacity})`;
++  return `rgba(0, 0, 0, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getBackgroundLightColor(opacity?: number): string {
+-  return `rgba(69, 69, 69, ${opacity == null ? 1 : opacity})`;
++  return `rgba(31, 31, 31, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getBackgroundDarkColor(opacity?: number): string {
+-  return `rgba(34, 34, 34, ${opacity == null ? 1 : opacity})`;
++  return `rgba(0, 0, 0, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getWarningColor(opacity?: number): string {
+-  return `rgba(250, 186, 48, ${opacity == null ? 1 : opacity})`;
++  return `rgba(249, 115, 22, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getWarningDarkColor(opacity?: number): string {
+-  return `rgba(224, 167, 8, ${opacity == null ? 1 : opacity})`;
++  return `rgba(234, 88, 12, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getFatalColor(opacity?: number): string {
+-  return `rgba(243, 83, 105, ${opacity == null ? 1 : opacity})`;
++  return `rgba(249, 115, 22, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getFatalDarkColor(opacity?: number): string {
+-  return `rgba(208, 75, 95, ${opacity == null ? 1 : opacity})`;
++  return `rgba(234, 88, 12, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getErrorColor(opacity?: number): string {
+-  return `rgba(243, 83, 105, ${opacity == null ? 1 : opacity})`;
++  return `rgba(239, 68, 68, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getErrorDarkColor(opacity?: number): string {
+-  return `rgba(208, 75, 95, ${opacity == null ? 1 : opacity})`;
++  return `rgba(220, 38, 38, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getLogColor(opacity?: number): string {
+-  return `rgba(119, 119, 119, ${opacity == null ? 1 : opacity})`;
++  return `rgba(156, 163, 175, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getWarningHighlightColor(opacity?: number): string {
+-  return `rgba(252, 176, 29, ${opacity == null ? 1 : opacity})`;
++  return `rgba(249, 115, 22, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getDividerColor(opacity?: number): string {
+-  return `rgba(255, 255, 255, ${opacity == null ? 1 : opacity})`;
++  return `rgba(55, 65, 81, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getHighlightColor(opacity?: number): string {
+-  return `rgba(252, 176, 29, ${opacity == null ? 1 : opacity})`;
++  return `rgba(249, 115, 22, ${opacity == null ? 1 : opacity})`;
+ }
+ 
+ export function getTextColor(opacity?: number): string {
