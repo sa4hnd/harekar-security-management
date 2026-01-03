@@ -1437,3 +1437,69 @@ iOS Bundled 364ms node_modules/expo-router/entry.js (1 module)
 We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
  LOG  Push token not available (preview mode) - local notifications still work
  WARN  The <CameraView> component does not support children. This may lead to inconsistent behaviour or crashes. If you want to render content on top of the Camera, consider using absolute positioning.
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules/expo-router/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules/expo-router/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules/expo-router/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules/expo-router/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 38022ms node_modules/expo-router/node/render.js (1 module)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules/expo-router/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules/expo-router/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 26120ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+Web Bundled 41159ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 29298ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 968ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+Web Bundled 2374ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 15154ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 211ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+Web Bundled 1470ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 164ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 289ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+λ Bundled 140ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 4209ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 2720ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 149ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+  factory (app/(tabs)/(home)/index.tsx:85:5)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  Object.get [as ./onboarding.tsx] (app/(tabs)/(home)/_layout.tsx:4:55)
+Web Bundled 1418ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 897ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
