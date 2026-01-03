@@ -1,21 +1,48 @@
 {
   "expo": {
-    "name": "Vibracode App",
-    "slug": "vibracode-app",
+    "name": "هاریکار گروپ",
+    "slug": "harikar-group",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "vibracode",
+    "scheme": "harikar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.harikar.security",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs camera access to take attendance photos and capture incident reports.",
+        "NSPhotoLibraryUsageDescription": "This app needs photo library access to select profile pictures.",
+        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library.",
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to verify your attendance location.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to verify your attendance location.",
+        "NSLocationAlwaysUsageDescription": "This app needs location access to verify your attendance location.",
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleDevelopmentRegion": "ku"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#007AFF"
+      },
+      "package": "com.harikar.security",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -30,14 +57,56 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FAFAFA"
+          "backgroundColor": "#007AFF"
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "This app needs camera access to take attendance photos and capture incident reports.",
+          "microphonePermission": "This app needs microphone access for video recording.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs location access to verify your attendance location.",
+          "locationAlwaysPermission": "This app needs location access to verify your attendance location.",
+          "locationWhenInUsePermission": "This app needs location access to verify your attendance location.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app needs photo library access to select profile pictures.",
+          "cameraPermission": "This app needs camera access to take profile pictures."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#007AFF",
+          "sounds": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "locales": {
+      "ku": "./locales/ku.json"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    },
+    "owner": "harikar"
   }
 }
