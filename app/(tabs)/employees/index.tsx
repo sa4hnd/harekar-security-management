@@ -5,7 +5,7 @@ import { Users, Plus, Search, ChevronRight, Mail, Phone, Shield, X, Check, Trash
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
-import { supabase, User, Attendance } from "@/lib/supabase";
+import { supabase, User, Attendance, uploadAvatar } from "@/lib/supabase";
 import AttendanceDetails from "@/components/AttendanceDetails";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { formatShiftTime12h, formatTime12h } from "@/lib/utils/time";
@@ -275,9 +275,20 @@ export default function EmployeesScreen() {
         updateData.password_hash = editPassword;
       }
 
-      // Update avatar URL if changed
-      if (editAvatarUrl !== selectedEmployee.avatar_url) {
-        updateData.avatar_url = editAvatarUrl;
+      // Upload avatar to Supabase Storage if changed
+      if (editAvatarUrl && editAvatarUrl !== selectedEmployee.avatar_url) {
+        // If it's a new local URI (not already a Supabase URL), upload it
+        if (!editAvatarUrl.includes("supabase.co")) {
+          const uploadedUrl = await uploadAvatar(selectedEmployee.id, editAvatarUrl);
+          if (uploadedUrl) {
+            updateData.avatar_url = uploadedUrl;
+          }
+        } else {
+          updateData.avatar_url = editAvatarUrl;
+        }
+      } else if (!editAvatarUrl && selectedEmployee.avatar_url) {
+        // Avatar was removed
+        updateData.avatar_url = null;
       }
 
       const { error } = await supabase
@@ -298,7 +309,7 @@ export default function EmployeesScreen() {
         email: editEmail.toLowerCase().trim(),
         phone: editPhone.trim() || "",
         notes: editNotes.trim() || "",
-        avatar_url: editAvatarUrl || undefined,
+        avatar_url: updateData.avatar_url || undefined,
       });
 
       setIsEditMode(false);

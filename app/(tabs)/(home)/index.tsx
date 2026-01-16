@@ -14,6 +14,7 @@ import AttendanceDetails from "@/components/AttendanceDetails";
 import StatusBadge from "@/components/StatusBadge";
 import { formatTime12h } from "@/lib/utils/time";
 import { sendImmediateNotification } from "@/lib/notifications/notificationService";
+import { sendAnnouncementNotification } from "@/lib/notifications/pushService";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -269,7 +270,7 @@ export default function HomeScreen() {
   };
 
   const handleSendAnnouncement = async () => {
-    if (!announcementTitle.trim() || !announcementMessage.trim()) return;
+    if (!announcementTitle.trim() || !announcementMessage.trim() || !user) return;
 
     dismissKeyboard();
     setIsSendingAnnouncement(true);
@@ -280,11 +281,42 @@ export default function HomeScreen() {
 
     try {
       const priorityEmoji = announcementPriority === "urgent" ? "🚨 " : "";
+      const fullTitle = priorityEmoji + announcementTitle.trim();
+
+      // Save announcement to Supabase
+      const { data: announcementData, error: announcementError } = await supabase
+        .from("announcements")
+        .insert({
+          title: announcementTitle.trim(),
+          message: announcementMessage.trim(),
+          priority: announcementPriority,
+          target_audience: "all",
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (announcementError) {
+        console.error("Error saving announcement:", announcementError);
+      }
+
+      // Send local notification for the current device
       await sendImmediateNotification(
-        priorityEmoji + announcementTitle.trim(),
+        fullTitle,
         announcementMessage.trim(),
         { type: "announcement", from: user?.full_name, priority: announcementPriority }
       );
+
+      // Send push notifications to all users via Expo Push API
+      if (announcementData) {
+        await sendAnnouncementNotification(
+          announcementData.id,
+          announcementTitle.trim(),
+          announcementMessage.trim(),
+          "all",
+          user.id
+        );
+      }
 
       if (Platform.OS !== "web") {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

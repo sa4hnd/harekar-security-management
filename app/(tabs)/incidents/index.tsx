@@ -1,29 +1,25 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, ViewStyle } from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AlertTriangle, Plus, X, Check, ChevronRight, Clock, MapPin, Shield, AlertCircle, Wrench, HelpCircle, Flame, FileText } from "lucide-react-native";
+import { AlertTriangle, Plus, X, Check, ChevronRight, Clock, MapPin, Shield, AlertCircle, Wrench, HelpCircle, Flame, FileText, Camera, ImageIcon } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sendImmediateNotification } from "@/lib/notifications/notificationService";
-
-interface Incident {
-  id: string;
-  user_id: string;
-  user_name: string;
-  type: "security_breach" | "suspicious_activity" | "equipment_issue" | "other";
-  priority: "urgent" | "normal";
-  description: string;
-  location: string;
-  latitude?: number;
-  longitude?: number;
-  status: "pending" | "in_progress" | "resolved";
-  created_at: string;
-  resolved_at?: string;
-}
+import * as ImagePicker from "expo-image-picker";
+import { Image } from "expo-image";
+import {
+  supabase,
+  Incident,
+  IncidentWithUser,
+  createIncident,
+  getIncidentsWithUsers,
+  updateIncidentStatus,
+  getActivePushTokens,
+  logNotification,
+} from "@/lib/supabase";
+import { sendPushNotificationsToUsers } from "@/lib/notifications/pushService";
 
 const INCIDENT_TYPES = [
   { id: "security_breach", label: t.securityBreach, icon: Shield, color: Colors.error },
@@ -35,13 +31,14 @@ const INCIDENT_TYPES = [
 export default function IncidentsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [incidents, setIncidents] = useState<IncidentWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<IncidentWithUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPhotoUri, setSelectedPhotoUri] = useState<string | null>(null);
   const [newIncident, setNewIncident] = useState({
     type: "suspicious_activity" as Incident["type"],
     priority: "normal" as Incident["priority"],
@@ -53,12 +50,8 @@ export default function IncidentsScreen() {
 
   const fetchIncidents = async () => {
     try {
-      const stored = await AsyncStorage.getItem("incidents");
-      let allIncidents: Incident[] = stored ? JSON.parse(stored) : [];
-
-      // All users (both security guards and supervisors) can see all incidents
-      allIncidents.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setIncidents(allIncidents);
+      const data = await getIncidentsWithUsers();
+      setIncidents(data);
     } catch (error) {
       console.error("Error fetching incidents:", error);
     } finally {
@@ -78,6 +71,64 @@ export default function IncidentsScreen() {
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
+  };
+
+  const handlePickImage = async () => {
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.base64) {
+          setSelectedPhotoUri(`data:image/jpeg;base64,${asset.base64}`);
+        } else {
+          setSelectedPhotoUri(asset.uri);
+        }
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.base64) {
+          setSelectedPhotoUri(`data:image/jpeg;base64,${asset.base64}`);
+        } else {
+          setSelectedPhotoUri(asset.uri);
+        }
+      }
+    } catch (error) {
+      console.error("Error taking photo:", error);
+    }
   };
 
   const handleSubmitIncident = async () => {
@@ -113,10 +164,9 @@ export default function IncidentsScreen() {
         }
       }
 
-      const incident: Incident = {
-        id: Date.now().toString(),
+      // Create incident in Supabase with photo upload
+      const incidentData: Omit<Incident, "id" | "created_at" | "updated_at"> = {
         user_id: user.id,
-        user_name: user.full_name,
         type: newIncident.type,
         priority: newIncident.priority,
         description: newIncident.description.trim(),
@@ -124,22 +174,48 @@ export default function IncidentsScreen() {
         latitude,
         longitude,
         status: "pending",
-        created_at: new Date().toISOString(),
       };
 
-      const stored = await AsyncStorage.getItem("incidents");
-      const existingIncidents: Incident[] = stored ? JSON.parse(stored) : [];
-      existingIncidents.push(incident);
-      await AsyncStorage.setItem("incidents", JSON.stringify(existingIncidents));
+      const { id: incidentId, success } = await createIncident(incidentData, selectedPhotoUri || undefined);
 
-      // Send notification to all users about the new incident
-      const typeLabel = INCIDENT_TYPES.find(t => t.id === incident.type)?.label || incident.type;
-      const priorityText = incident.priority === "urgent" ? " [URGENT]" : "";
-      await sendImmediateNotification(
-        `${t.newIncident}${priorityText}`,
-        `${user.full_name}: ${incident.description.substring(0, 100)}${incident.description.length > 100 ? "..." : ""}`,
-        { type: "incident", incidentId: incident.id, incidentType: incident.type }
-      );
+      if (!success) {
+        throw new Error("Failed to create incident");
+      }
+
+      // Send push notification to all users about the new incident
+      const typeLabel = INCIDENT_TYPES.find(t => t.id === newIncident.type)?.label || newIncident.type;
+      const priorityText = newIncident.priority === "urgent" ? " [URGENT]" : "";
+      const notificationTitle = `${t.newIncident}${priorityText}`;
+      const notificationBody = `${user.full_name}: ${newIncident.description.substring(0, 100)}${newIncident.description.length > 100 ? "..." : ""}`;
+
+      // Get all push tokens and send notifications
+      try {
+        const tokens = await getActivePushTokens("all");
+        if (tokens.length > 0) {
+          await sendPushNotificationsToUsers(
+            tokens,
+            notificationTitle,
+            notificationBody,
+            { type: "incident", incidentId, incidentType: newIncident.type }
+          );
+
+          // Log notification for each user
+          for (const token of tokens) {
+            await logNotification({
+              user_id: token.user_id,
+              type: "incident",
+              title: notificationTitle,
+              body: notificationBody,
+              data: { incidentId, incidentType: newIncident.type },
+              push_token: token.push_token,
+              delivered: true,
+            });
+          }
+        }
+      } catch (notifyError) {
+        console.error("Error sending notifications:", notifyError);
+        // Don't fail the incident creation if notifications fail
+      }
 
       if (Platform.OS !== "web") {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -151,6 +227,7 @@ export default function IncidentsScreen() {
         description: "",
         location: "",
       });
+      setSelectedPhotoUri(null);
       setShowReportModal(false);
       fetchIncidents();
     } catch (error) {
@@ -169,21 +246,20 @@ export default function IncidentsScreen() {
     }
 
     try {
-      const stored = await AsyncStorage.getItem("incidents");
-      const allIncidents: Incident[] = stored ? JSON.parse(stored) : [];
-      const updatedIncidents = allIncidents.map(i => {
-        if (i.id === incidentId) {
-          return {
-            ...i,
-            status: newStatus,
-            resolved_at: newStatus === "resolved" ? new Date().toISOString() : undefined,
-          };
+      const success = await updateIncidentStatus(
+        incidentId,
+        newStatus,
+        newStatus === "resolved" ? user?.id : undefined
+      );
+
+      if (success) {
+        fetchIncidents();
+        setShowDetailModal(false);
+
+        if (Platform.OS !== "web") {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
-        return i;
-      });
-      await AsyncStorage.setItem("incidents", JSON.stringify(updatedIncidents));
-      fetchIncidents();
-      setShowDetailModal(false);
+      }
     } catch (error) {
       console.error("Error updating incident:", error);
     }
@@ -310,6 +386,11 @@ export default function IncidentsScreen() {
                           <Flame size={12} color={Colors.error} />
                         </View>
                       )}
+                      {incident.photo_url && (
+                        <View style={styles.photoBadge}>
+                          <ImageIcon size={12} color={Colors.primary} />
+                        </View>
+                      )}
                     </View>
                   </View>
 
@@ -324,9 +405,8 @@ export default function IncidentsScreen() {
                           {incident.location}
                         </Text>
                       </View>
-                      {/* Show reporter name for all users */}
                       <Text style={[styles.reportedBy, incident.user_id === user?.id && styles.ownIncident]}>
-                        {incident.user_id === user?.id ? t.you : incident.user_name}
+                        {incident.user_id === user?.id ? t.you : incident.reporter_name || incident.user?.full_name}
                       </Text>
                     </View>
                     <View style={[styles.typeIconWrapper, { backgroundColor: typeConfig.color + "20" }]}>
@@ -342,17 +422,18 @@ export default function IncidentsScreen() {
         <View style={{ height: insets.bottom + 100 }} />
       </ScrollView>
 
+      {/* Report Incident Modal */}
       <Modal visible={showReportModal} animationType="slide" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => { dismissKeyboard(); setShowReportModal(false); }} />
+          <Pressable style={styles.modalBackdrop} onPress={() => { dismissKeyboard(); setShowReportModal(false); setSelectedPhotoUri(null); }} />
           <TouchableWithoutFeedback onPress={dismissKeyboard}>
             <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
               <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
-                <Pressable onPress={() => { dismissKeyboard(); setShowReportModal(false); }} style={styles.closeButton}>
+                <Pressable onPress={() => { dismissKeyboard(); setShowReportModal(false); setSelectedPhotoUri(null); }} style={styles.closeButton}>
                   <X size={20} color={Colors.textPrimary} />
                 </Pressable>
                 <Text style={styles.modalTitle}>{t.reportIncident}</Text>
@@ -419,6 +500,39 @@ export default function IncidentsScreen() {
                   />
                 </View>
 
+                {/* Photo Section */}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>{t.incidentPhoto || "Incident Photo"}</Text>
+                  {selectedPhotoUri ? (
+                    <View style={styles.photoPreviewContainer}>
+                      <Image source={{ uri: selectedPhotoUri }} style={styles.photoPreview} contentFit="cover" />
+                      <Pressable
+                        style={styles.removePhotoBtn}
+                        onPress={() => setSelectedPhotoUri(null)}
+                      >
+                        <X size={16} color={Colors.white} />
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <View style={styles.photoButtons}>
+                      <Pressable
+                        style={({ pressed }) => [styles.photoBtn, pressed && { opacity: 0.7 }]}
+                        onPress={handleTakePhoto}
+                      >
+                        <Camera size={20} color={Colors.primary} />
+                        <Text style={styles.photoBtnText}>{t.takePhoto || "Take Photo"}</Text>
+                      </Pressable>
+                      <Pressable
+                        style={({ pressed }) => [styles.photoBtn, pressed && { opacity: 0.7 }]}
+                        onPress={handlePickImage}
+                      >
+                        <ImageIcon size={20} color={Colors.primary} />
+                        <Text style={styles.photoBtnText}>{t.choosePhoto || "Choose Photo"}</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+
                 <Pressable
                   style={({ pressed }) => [
                     styles.submitButton,
@@ -443,6 +557,7 @@ export default function IncidentsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Incident Detail Modal */}
       <Modal visible={showDetailModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setShowDetailModal(false)} />
@@ -463,6 +578,17 @@ export default function IncidentsScreen() {
                       {getStatusText(selectedIncident.status)}
                     </Text>
                   </View>
+
+                  {/* Incident Photo */}
+                  {selectedIncident.photo_url && (
+                    <View style={styles.detailPhotoContainer}>
+                      <Image
+                        source={{ uri: selectedIncident.photo_url }}
+                        style={styles.detailPhoto}
+                        contentFit="cover"
+                      />
+                    </View>
+                  )}
 
                   <View style={styles.detailCard}>
                     <View style={styles.detailRow}>
@@ -492,17 +618,15 @@ export default function IncidentsScreen() {
                       </View>
                     </View>
 
-                    {isSupervisor && (
-                      <>
-                        <View style={styles.detailDivider} />
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailValue}>{selectedIncident.user_name}</Text>
-                          <View style={styles.detailLabel}>
-                            <Shield size={14} color={Colors.textTertiary} />
-                          </View>
-                        </View>
-                      </>
-                    )}
+                    <View style={styles.detailDivider} />
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailValue}>
+                        {selectedIncident.reporter_name || selectedIncident.user?.full_name}
+                      </Text>
+                      <View style={styles.detailLabel}>
+                        <Shield size={14} color={Colors.textTertiary} />
+                      </View>
+                    </View>
                   </View>
                 </View>
 
@@ -669,6 +793,14 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 8,
     backgroundColor: Colors.errorLight,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  photoBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: Colors.tint.blue,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -858,6 +990,48 @@ const styles = StyleSheet.create({
     minHeight: 100,
     paddingTop: 14,
   },
+  photoButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  photoBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: Colors.tint.blue,
+    borderWidth: 1,
+    borderColor: Colors.primary + "30",
+  },
+  photoBtnText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.primary,
+  },
+  photoPreviewContainer: {
+    position: "relative",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  photoPreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 16,
+  },
+  removePhotoBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   submitButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -893,6 +1067,17 @@ const styles = StyleSheet.create({
   detailStatusText: {
     fontSize: 16,
     fontWeight: "700" as const,
+  },
+  detailPhotoContainer: {
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+  detailPhoto: {
+    width: "100%",
+    height: 200,
+    borderRadius: 16,
   },
   detailCard: {
     width: "100%",
@@ -971,3 +1156,6 @@ const styles = StyleSheet.create({
 (t as Record<string, string>).updateStatus = "نوێکردنەوەی بارودۆخ";
 (t as Record<string, string>).you = "تۆ";
 (t as Record<string, string>).newIncident = "ڕووداوی نوێ";
+(t as Record<string, string>).incidentPhoto = "وێنەی ڕووداو";
+(t as Record<string, string>).takePhoto = "وێنە بگرە";
+(t as Record<string, string>).choosePhoto = "وێنە هەڵبژێرە";

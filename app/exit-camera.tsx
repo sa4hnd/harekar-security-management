@@ -8,7 +8,7 @@ import { Image } from "expo-image";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
-import { supabase } from "@/lib/supabase";
+import { supabase, uploadAttendancePhoto } from "@/lib/supabase";
 import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
 
@@ -133,6 +133,14 @@ export default function ExitCameraScreen() {
         throw new Error("No active attendance found");
       }
 
+      // Upload photo to Supabase Storage
+      let photoUrl: string | null = null;
+      if (photoBase64) {
+        photoUrl = await uploadAttendancePhoto(user.id, today, photoBase64);
+      } else if (photo) {
+        photoUrl = await uploadAttendancePhoto(user.id, today, photo);
+      }
+
       const { error } = await supabase
         .from("attendance")
         .update({
@@ -140,7 +148,7 @@ export default function ExitCameraScreen() {
           check_out_location: locationAddress,
           check_out_latitude: latitude,
           check_out_longitude: longitude,
-          check_out_photo: photoBase64 || photo,
+          check_out_photo: photoUrl || photoBase64 || photo,
           status: "checked_out",
         })
         .eq("id", latestAttendance.id);
