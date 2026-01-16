@@ -5,7 +5,7 @@ import { Settings, Bell, Moon, Sun, Globe, Shield, ChevronRight, Info, MessageSq
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "@/lib/supabase";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -33,13 +33,26 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [user]);
 
   const loadSettings = async () => {
+    if (!user) return;
+
     try {
-      const stored = await AsyncStorage.getItem("app_settings");
-      if (stored) {
-        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
+      // Load settings from Supabase app_settings table
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (data && !error) {
+        setSettings({
+          notificationsEnabled: data.notification_sound ?? DEFAULT_SETTINGS.notificationsEnabled,
+          lateAlertsEnabled: data.auto_check_in_reminder ?? DEFAULT_SETTINGS.lateAlertsEnabled,
+          dailySummaryEnabled: DEFAULT_SETTINGS.dailySummaryEnabled,
+          darkMode: data.dark_mode ?? DEFAULT_SETTINGS.darkMode,
+        });
       }
     } catch (error) {
       console.error("Error loading settings:", error);
@@ -52,8 +65,30 @@ export default function SettingsScreen() {
     }
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+
+    if (!user) return;
+
     try {
-      await AsyncStorage.setItem("app_settings", JSON.stringify(newSettings));
+      // Map local settings to database columns
+      const dbUpdate: Record<string, boolean> = {};
+      if (key === "notificationsEnabled") dbUpdate.notification_sound = value;
+      if (key === "lateAlertsEnabled") dbUpdate.auto_check_in_reminder = value;
+      if (key === "darkMode") dbUpdate.dark_mode = value;
+
+      // Upsert settings to Supabase
+      const { error } = await supabase
+        .from("app_settings")
+        .upsert({
+          user_id: user.id,
+          ...dbUpdate,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: "user_id",
+        });
+
+      if (error) {
+        console.error("Error saving settings:", error);
+      }
     } catch (error) {
       console.error("Error saving settings:", error);
     }
