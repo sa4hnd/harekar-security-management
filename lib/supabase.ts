@@ -262,34 +262,32 @@ const uriToBlob = async (uri: string): Promise<Blob> => {
     return response.blob();
   }
 
-  // For native platforms, use FileSystem to read the file
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
-  // Convert base64 to blob
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: "image/jpeg" });
+  // For native platforms, fetch the file as a blob
+  const response = await fetch(uri);
+  return response.blob();
 };
 
 /**
  * Convert base64 string to Blob
  */
-const base64ToBlob = (base64: string, mimeType: string = "image/jpeg"): Blob => {
+const base64ToBlob = async (base64: string, mimeType: string = "image/jpeg"): Promise<Blob> => {
   // Remove data URL prefix if present
   const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
-  const byteCharacters = atob(base64Data);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
+
+  if (Platform.OS === "web") {
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
   }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
+
+  // For React Native, convert base64 to a data URI and fetch
+  const dataUri = `data:${mimeType};base64,${base64Data}`;
+  const response = await fetch(dataUri);
+  return response.blob();
 };
 
 /**
@@ -309,7 +307,7 @@ export const uploadImage = async (
 
     // Check if it's a base64 string
     if (imageUri.startsWith("data:")) {
-      blob = base64ToBlob(imageUri);
+      blob = await base64ToBlob(imageUri);
     } else {
       blob = await uriToBlob(imageUri);
     }
