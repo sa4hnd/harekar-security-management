@@ -25,7 +25,7 @@
       }
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.harikar.security",
       "buildNumber": "1",
       "infoPlist": {
