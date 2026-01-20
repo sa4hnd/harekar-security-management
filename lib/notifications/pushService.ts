@@ -268,14 +268,17 @@ export const sendAnnouncementNotification = async (
   title: string,
   message: string,
   targetType: "all" | "supervisors" | "guards",
-  senderId?: string
+  senderId?: string,
+  priority?: "normal" | "urgent"
 ): Promise<PushNotificationResult> => {
-  const notificationTitle = "New Announcement";
+  const priorityEmoji = priority === "urgent" ? "🚨 " : "";
+  const notificationTitle = priorityEmoji + "New Announcement";
   const notificationBody = `${title}: ${message.substring(0, 100)}${message.length > 100 ? "..." : ""}`;
 
   const data = {
     type: "announcement",
     announcementId,
+    priority,
   };
 
   if (targetType === "supervisors") {

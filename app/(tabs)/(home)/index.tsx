@@ -13,7 +13,6 @@ import * as Haptics from "expo-haptics";
 import AttendanceDetails from "@/components/AttendanceDetails";
 import StatusBadge from "@/components/StatusBadge";
 import { formatTime12h } from "@/lib/utils/time";
-import { sendImmediateNotification } from "@/lib/notifications/notificationService";
 import { sendAnnouncementNotification } from "@/lib/notifications/pushService";
 
 export default function HomeScreen() {
@@ -260,9 +259,6 @@ export default function HomeScreen() {
     }
 
     try {
-      const priorityEmoji = announcementPriority === "urgent" ? "🚨 " : "";
-      const fullTitle = priorityEmoji + announcementTitle.trim();
-
       // Save announcement to Supabase
       const { data: announcementData, error: announcementError } = await supabase
         .from("announcements")
@@ -280,21 +276,16 @@ export default function HomeScreen() {
         console.error("Error saving announcement:", announcementError);
       }
 
-      // Send local notification for the current device
-      await sendImmediateNotification(
-        fullTitle,
-        announcementMessage.trim(),
-        { type: "announcement", from: user?.full_name, priority: announcementPriority }
-      );
-
       // Send push notifications to all users via Expo Push API
+      // Note: This sends to all users including the sender, no need for local notification
       if (announcementData) {
         await sendAnnouncementNotification(
           announcementData.id,
           announcementTitle.trim(),
           announcementMessage.trim(),
           "all",
-          user.id
+          user.id,
+          announcementPriority
         );
       }
 
