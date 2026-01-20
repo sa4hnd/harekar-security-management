@@ -9,9 +9,7 @@
     "scheme": "harikar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/4448d282-e2e9-4c26-afdc-f529f9d758e1",
       "enabled": true,
