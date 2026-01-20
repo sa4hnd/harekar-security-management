@@ -79,6 +79,7 @@ CREATE INDEX idx_users_push_token ON users(push_token) WHERE push_token IS NOT N
 CREATE TABLE attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  shift_id UUID REFERENCES shifts(id) ON DELETE SET NULL, -- Optional link to shift
   date DATE NOT NULL,
   check_in_time TIMESTAMPTZ,
   check_in_location TEXT,
@@ -102,6 +103,7 @@ CREATE INDEX idx_attendance_user_id ON attendance(user_id);
 CREATE INDEX idx_attendance_date ON attendance(date);
 CREATE INDEX idx_attendance_status ON attendance(status);
 CREATE INDEX idx_attendance_user_date ON attendance(user_id, date);
+CREATE INDEX idx_attendance_shift_id ON attendance(shift_id) WHERE shift_id IS NOT NULL;
 
 -- ============================================
 -- INCIDENTS TABLE
@@ -140,9 +142,9 @@ CREATE TABLE announcements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   message TEXT NOT NULL,
-  sent_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   priority TEXT DEFAULT 'normal' CHECK (priority IN ('urgent', 'normal')),
-  target_type TEXT DEFAULT 'all' CHECK (target_type IN ('all', 'individual', 'supervisors')),
+  target_audience TEXT DEFAULT 'all' CHECK (target_audience IN ('all', 'individual', 'supervisors', 'guards')),
   target_user_id UUID REFERENCES users(id), -- For individual notifications
   is_active BOOLEAN DEFAULT true,
   expires_at TIMESTAMPTZ,
@@ -152,10 +154,10 @@ CREATE TABLE announcements (
 );
 
 -- Indexes for announcements
-CREATE INDEX idx_announcements_sent_by ON announcements(sent_by);
+CREATE INDEX idx_announcements_created_by ON announcements(created_by);
 CREATE INDEX idx_announcements_created_at ON announcements(created_at DESC);
 CREATE INDEX idx_announcements_is_active ON announcements(is_active);
-CREATE INDEX idx_announcements_target_type ON announcements(target_type);
+CREATE INDEX idx_announcements_target_audience ON announcements(target_audience);
 
 -- ============================================
 -- NOTIFICATION_LOG TABLE
@@ -194,6 +196,7 @@ CREATE TABLE shifts (
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
   location_name TEXT,
+  location_address TEXT, -- Full address for the location
   notes TEXT,
   created_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),

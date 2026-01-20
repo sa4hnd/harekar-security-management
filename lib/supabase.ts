@@ -107,6 +107,7 @@ export interface User {
 export interface Attendance {
   id: string;
   user_id: string;
+  shift_id?: string;
   date: string;
   check_in_time?: string;
   check_in_location?: string;
@@ -155,9 +156,9 @@ export interface Announcement {
   id: string;
   title: string;
   message: string;
-  sent_by: string;
+  created_by: string;
   priority: "urgent" | "normal";
-  target_type: "all" | "individual" | "supervisors";
+  target_audience: "all" | "individual" | "supervisors" | "guards";
   target_user_id?: string;
   is_active: boolean;
   expires_at?: string;
@@ -167,7 +168,7 @@ export interface Announcement {
 }
 
 export interface AnnouncementWithUser extends Announcement {
-  sender?: User;
+  creator?: User;
 }
 
 export interface NotificationLog {
@@ -193,6 +194,7 @@ export interface Shift {
   start_time: string;
   end_time: string;
   location_name?: string;
+  location_address?: string;
   notes?: string;
   created_by?: string;
   created_at: string;
@@ -531,12 +533,26 @@ export const getActivePushTokens = async (
  * Log a notification to the database
  */
 export const logNotification = async (
-  notification: Omit<NotificationLog, "id" | "sent_at">
+  userId: string,
+  title: string,
+  body: string,
+  type: NotificationLog["type"],
+  senderId?: string,
+  data?: Record<string, unknown>,
+  pushToken?: string
 ): Promise<string | null> => {
   try {
-    const { data, error } = await supabase
+    const { data: result, error } = await supabase
       .from("notification_log")
-      .insert(notification)
+      .insert({
+        user_id: userId,
+        title,
+        body,
+        type,
+        data: data || null,
+        push_token: pushToken || null,
+        delivered: false,
+      })
       .select("id")
       .single();
 
@@ -545,7 +561,7 @@ export const logNotification = async (
       return null;
     }
 
-    return data.id;
+    return result.id;
   } catch (error) {
     console.error("Error logging notification:", error);
     return null;
