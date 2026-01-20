@@ -1610,3 +1610,5 @@ Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
 Web Bundled 11687ms node_modules/expo-router/entry.js (1 module)
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+CommandError: Input is required, but 'npx expo' is in non-interactive mode.
+Use the EXPO_TOKEN environment variable to authenticate in CI (Learn more: https://docs.expo.dev/accounts/programmatic-access/)
