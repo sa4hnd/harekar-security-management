@@ -78,30 +78,44 @@ export default function ReportsScreen() {
         };
       }
 
+      // Group attendance by date and user to handle multiple records per day
+      const attendanceByDateUser: { [key: string]: Set<string> } = {};
+      const lateByDateUser: { [key: string]: Set<string> } = {};
+
       (attendanceData || []).forEach(att => {
-        if (dailyStats[att.date]) {
-          if (att.status === "checked_in" || att.status === "checked_out") {
-            dailyStats[att.date].attended++;
-          } else if (att.status === "late") {
-            dailyStats[att.date].late++;
-            dailyStats[att.date].attended++;
-          }
+        const key = att.date;
+        if (!attendanceByDateUser[key]) {
+          attendanceByDateUser[key] = new Set();
+          lateByDateUser[key] = new Set();
+        }
+
+        if (att.status === "checked_in" || att.status === "checked_out" || att.status === "late") {
+          attendanceByDateUser[key].add(att.user_id);
+        }
+        if (att.status === "late") {
+          lateByDateUser[key].add(att.user_id);
         }
       });
 
+      // Calculate stats based on unique users per day
       Object.keys(dailyStats).forEach(date => {
         const ds = dailyStats[date];
+        ds.attended = attendanceByDateUser[date]?.size || 0;
+        ds.late = lateByDateUser[date]?.size || 0;
         ds.absent = ds.total - ds.attended;
       });
 
       setWeeklyStats(Object.values(dailyStats));
 
+      // Calculate employee performance with unique days
       const empPerformance: EmployeePerformance[] = (employees || []).map(emp => {
         const empAttendance = (attendanceData || []).filter(a => a.user_id === emp.id);
-        const onTime = empAttendance.filter(a => a.status === "checked_in" || a.status === "checked_out").length;
-        const late = empAttendance.filter(a => a.status === "late").length;
+
+        // Count unique days for on-time and late
+        const uniqueOnTimeDays = new Set(empAttendance.filter(a => a.status === "checked_in" || a.status === "checked_out").map(a => a.date)).size;
+        const uniqueLateDays = new Set(empAttendance.filter(a => a.status === "late").map(a => a.date)).size;
         const totalDays = daysBack;
-        const absent = totalDays - onTime - late;
+        const absent = totalDays - uniqueOnTimeDays - uniqueLateDays;
 
         const checkInTimes = empAttendance
           .filter(a => a.check_in_time)
@@ -122,8 +136,8 @@ export default function ReportsScreen() {
         return {
           user: emp,
           totalDays,
-          onTime,
-          late,
+          onTime: uniqueOnTimeDays,
+          late: uniqueLateDays,
           absent,
           averageCheckIn,
         };

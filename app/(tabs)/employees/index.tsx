@@ -66,9 +66,11 @@ export default function EmployeesScreen() {
       const { data: attendanceData } = await supabase
         .from("attendance")
         .select("*")
-        .eq("date", today);
+        .eq("date", today)
+        .order("check_in_time", { ascending: false });
 
       const employeesWithStats = (employeesData || []).map((emp) => {
+        // Get the most recent attendance record for each employee (filter by user_id, already sorted by check_in_time desc)
         const todayAttendance = (attendanceData || []).find((a) => a.user_id === emp.id);
         return { ...emp, todayAttendance };
       });

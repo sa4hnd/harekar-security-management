@@ -78,31 +78,34 @@ export default function HomeScreen() {
 
         setTodayAttendances(attendancesWithUsers);
 
-        const attended = (attendances || []).filter(a =>
+        // Count unique users who have attended, exited, or are late
+        const uniqueAttended = new Set((attendances || []).filter(a =>
           a.status === "checked_in" || a.status === "checked_out" || a.status === "late"
-        ).length;
-        const exited = (attendances || []).filter(a => a.status === "checked_out").length;
-        const late = (attendances || []).filter(a => a.status === "late").length;
+        ).map(a => a.user_id)).size;
+        const uniqueExited = new Set((attendances || []).filter(a => a.status === "checked_out").map(a => a.user_id)).size;
+        const uniqueLate = new Set((attendances || []).filter(a => a.status === "late").map(a => a.user_id)).size;
 
         setStats({
           total: (securities || []).length,
           onShift: guardsOnShift.length,
-          attended,
-          exited,
-          late,
+          attended: uniqueAttended,
+          exited: uniqueExited,
+          late: uniqueLate,
         });
       } else {
-        // Get the most recent attendance record for today (there can be multiple)
+        // Get the most recent attendance record for today that is not checked out
+        // This allows the user to check in again after checking out
         const { data: todayData } = await supabase
           .from("attendance")
           .select("*")
           .eq("user_id", user.id)
           .eq("date", today)
+          .neq("status", "checked_out")
           .order("check_in_time", { ascending: false })
-          .limit(1)
-          .single();
+          .limit(1);
 
-        setTodayAttendance(todayData);
+        // Use the first record if exists, otherwise null
+        setTodayAttendance(todayData && todayData.length > 0 ? todayData[0] : null);
 
         const { data: historyData } = await supabase
           .from("attendance")
@@ -113,8 +116,9 @@ export default function HomeScreen() {
           .limit(10);
 
         // Filter out the current active attendance from history
+        const activeId = todayData && todayData.length > 0 ? todayData[0].id : null;
         const filteredHistory = (historyData || []).filter(h =>
-          todayData ? h.id !== todayData.id : true
+          activeId ? h.id !== activeId : true
         );
 
         setRecentHistory(filteredHistory.slice(0, 5));
@@ -187,8 +191,7 @@ export default function HomeScreen() {
       const shiftStart = user.shift_start_time ? new Date(`${today}T${user.shift_start_time}`) : null;
       const isLate = shiftStart ? now > new Date(shiftStart.getTime() + 15 * 60 * 1000) : false;
 
-      // Try to create a new attendance record
-      // If the unique constraint still exists, it will fall back to updating existing record
+      // Always create a new attendance record
       const { error: insertError } = await supabase
         .from("attendance")
         .insert({
@@ -201,31 +204,8 @@ export default function HomeScreen() {
           status: isLate ? "late" : "checked_in",
         });
 
-      // If insert fails due to unique constraint, update existing record instead
       if (insertError) {
-        if (insertError.code === "23505") {
-          // Unique constraint violation - update the existing record
-          const { error: updateError } = await supabase
-            .from("attendance")
-            .update({
-              check_in_time: now.toISOString(),
-              check_in_location: locationAddress,
-              check_in_latitude: latitude,
-              check_in_longitude: longitude,
-              check_out_time: null,
-              check_out_location: null,
-              check_out_latitude: null,
-              check_out_longitude: null,
-              check_out_photo: null,
-              status: isLate ? "late" : "checked_in",
-            })
-            .eq("user_id", user.id)
-            .eq("date", today);
-
-          if (updateError) throw updateError;
-        } else {
-          throw insertError;
-        }
+        throw insertError;
       }
 
       if (Platform.OS !== "web") {

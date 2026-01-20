@@ -98,7 +98,8 @@ CREATE INDEX idx_shifts_date ON shifts(date);
 -- ============================================
 -- ATTENDANCE TABLE
 -- ============================================
--- Tracks daily attendance records for security guards
+-- Tracks attendance records for security guards
+-- Allows multiple attendance records per user per day (e.g., for split shifts)
 CREATE TABLE attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -117,8 +118,8 @@ CREATE TABLE attendance (
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'checked_in', 'checked_out', 'absent', 'late')),
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, date)  -- One attendance record per user per day
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+  -- Note: No unique constraint - allows multiple attendance records per day
 );
 
 -- Indexes for attendance

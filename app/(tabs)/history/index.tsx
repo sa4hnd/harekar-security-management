@@ -33,7 +33,8 @@ export default function HistoryScreen() {
         .from("attendance")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .order("check_in_time", { ascending: false });
 
       if (!attendanceData) {
         setAttendance([]);
@@ -53,7 +54,9 @@ export default function HistoryScreen() {
         .map(([date, records]) => ({
           date,
           displayDate: formatDisplayDate(date),
-          records,
+          records: records.sort((a, b) =>
+            new Date(b.check_in_time || 0).getTime() - new Date(a.check_in_time || 0).getTime()
+          ),
         }))
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

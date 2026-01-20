@@ -119,15 +119,16 @@ export default function ExitCameraScreen() {
       const today = now.toISOString().split("T")[0];
 
       // Find the most recent checked-in attendance for today
-      const { data: latestAttendance } = await supabase
+      const { data: attendanceData } = await supabase
         .from("attendance")
         .select("id")
         .eq("user_id", user.id)
         .eq("date", today)
         .in("status", ["checked_in", "late"])
         .order("check_in_time", { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+
+      const latestAttendance = attendanceData && attendanceData.length > 0 ? attendanceData[0] : null;
 
       if (!latestAttendance) {
         throw new Error("No active attendance found");
