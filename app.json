@@ -8,20 +8,6 @@
     "scheme": "harikar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/your-project-id",
-      "enabled": true,
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "ON_LOAD"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id"
-      }
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.harikar.security",
@@ -75,12 +61,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-updates",
-        {
-          "username": "harikar"
-        }
-      ],
       [
         "expo-splash-screen",
         {
