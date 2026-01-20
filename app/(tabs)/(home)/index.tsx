@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MapPin, Clock, LogIn, LogOut, Shield, Users, ChevronRight, Calendar, Sparkles, BarChart3, AlertTriangle, Bell, X, Check, Send } from "lucide-react-native";
+import { MapPin, Clock, LogIn, LogOut, Shield, Users, ChevronRight, Calendar, Sparkles, BarChart3, AlertTriangle, Bell, X, Check, Send, AlertCircle } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
@@ -33,6 +33,7 @@ export default function HomeScreen() {
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementPriority, setAnnouncementPriority] = useState<"normal" | "urgent">("normal");
   const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
+  const [announcementError, setAnnouncementError] = useState<string | null>(null);
 
   const announcementTemplates = [
     { title: t.shiftReminder || "Shift Reminder", message: t.shiftReminderMessage || "Please prepare for your upcoming shift and arrive on time.", priority: "normal" as const },
@@ -249,8 +250,18 @@ export default function HomeScreen() {
   };
 
   const handleSendAnnouncement = async () => {
-    if (!announcementTitle.trim() || !announcementMessage.trim() || !user) return;
+    // Validate required fields
+    if (!announcementTitle.trim() || !announcementMessage.trim()) {
+      setAnnouncementError(t.fillRequired || "Please fill in all required fields");
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+      return;
+    }
 
+    if (!user) return;
+
+    setAnnouncementError(null);
     dismissKeyboard();
     setIsSendingAnnouncement(true);
 
@@ -260,7 +271,7 @@ export default function HomeScreen() {
 
     try {
       // Save announcement to Supabase
-      const { data: announcementData, error: announcementError } = await supabase
+      const { data: announcementData, error: saveError } = await supabase
         .from("announcements")
         .insert({
           title: announcementTitle.trim(),
@@ -272,8 +283,8 @@ export default function HomeScreen() {
         .select()
         .single();
 
-      if (announcementError) {
-        console.error("Error saving announcement:", announcementError);
+      if (saveError) {
+        console.error("Error saving announcement:", saveError);
       }
 
       // Send push notifications to all users via Expo Push API
@@ -296,6 +307,7 @@ export default function HomeScreen() {
       setAnnouncementTitle("");
       setAnnouncementMessage("");
       setAnnouncementPriority("normal");
+      setAnnouncementError(null);
       setShowAnnouncementModal(false);
     } catch (error) {
       console.error("Error sending announcement:", error);
@@ -487,6 +499,7 @@ export default function HomeScreen() {
               style={styles.modalBackdrop}
               onPress={() => {
                 dismissKeyboard();
+                setAnnouncementError(null);
                 setShowAnnouncementModal(false);
               }}
             />
@@ -496,6 +509,7 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => {
                     dismissKeyboard();
+                    setAnnouncementError(null);
                     setShowAnnouncementModal(false);
                   }}
                   style={styles.closeButton}
@@ -513,6 +527,14 @@ export default function HomeScreen() {
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={styles.announcementScrollContent}
               >
+                {/* Validation Error Banner */}
+                {announcementError && (
+                  <View style={styles.validationError}>
+                    <Text style={styles.validationErrorText}>{announcementError}</Text>
+                    <AlertCircle size={18} color={Colors.error} />
+                  </View>
+                )}
+
                 {/* Quick Templates Section */}
                 <View style={styles.templatesSection}>
                   <Text style={styles.templatesSectionTitle}>{t.quickTemplates || "Quick Templates"}</Text>
@@ -577,11 +599,14 @@ export default function HomeScreen() {
                 <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>{t.announcementTitle} *</Text>
                   <TextInput
-                    style={[styles.formInput, styles.announcementInput]}
+                    style={[styles.formInput, styles.announcementInput, announcementError && !announcementTitle.trim() && styles.inputError]}
                     placeholder={t.announcementTitle}
                     placeholderTextColor={Colors.textTertiary}
                     value={announcementTitle}
-                    onChangeText={setAnnouncementTitle}
+                    onChangeText={(text) => {
+                      setAnnouncementTitle(text);
+                      if (announcementError) setAnnouncementError(null);
+                    }}
                     textAlign="right"
                     returnKeyType="next"
                   />
@@ -590,11 +615,14 @@ export default function HomeScreen() {
                 <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>{t.announcementMessage} *</Text>
                   <TextInput
-                    style={[styles.formInput, styles.announcementTextArea]}
+                    style={[styles.formInput, styles.announcementTextArea, announcementError && !announcementMessage.trim() && styles.inputError]}
                     placeholder={t.announcementMessage}
                     placeholderTextColor={Colors.textTertiary}
                     value={announcementMessage}
-                    onChangeText={setAnnouncementMessage}
+                    onChangeText={(text) => {
+                      setAnnouncementMessage(text);
+                      if (announcementError) setAnnouncementError(null);
+                    }}
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
@@ -1007,6 +1035,29 @@ const styles = StyleSheet.create({
   },
   announcementScrollContent: {
     paddingBottom: 20,
+  },
+  validationError: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    backgroundColor: Colors.error + "15",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.error + "30",
+  },
+  validationErrorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.error,
+    textAlign: "right",
+  },
+  inputError: {
+    borderColor: Colors.error,
+    borderWidth: 1.5,
   },
   templatesSection: {
     marginBottom: 20,

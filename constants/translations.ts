@@ -163,6 +163,7 @@ export const t = {
   dailyBreakdown: "ووردەکارییا ڕۆژانە",
 
   incidents: "ڕوودان",
+  newIncident: "ڕوودانێ نوی",
   reportIncident: "ڕاپۆرتکرن",
   incidentType: "جۆرێ ڕوودانێ",
   incidentDescription: "وەسف",

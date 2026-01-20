@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView, Keyboard } from "react-native";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Users, Plus, Search, ChevronRight, Mail, Phone, Shield, X, Check, Trash2, Clock, Edit3, Save, FileText, Eye, EyeOff, Camera } from "lucide-react-native";
+import { Users, Plus, Search, ChevronRight, Mail, Phone, Shield, X, Check, Trash2, Clock, Edit3, Save, FileText, Eye, EyeOff, Camera, AlertCircle } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { t } from "@/constants/translations";
 import { useAuth } from "@/state/auth";
@@ -50,6 +50,7 @@ export default function EmployeesScreen() {
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [createEmployeeError, setCreateEmployeeError] = useState<string | null>(null);
 
   const fetchEmployees = async () => {
     if (!user) return;
@@ -191,11 +192,21 @@ export default function EmployeesScreen() {
 
   const handleCreateEmployee = async () => {
     if (!newEmployee.full_name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim()) {
+      setCreateEmployeeError(t.fillRequired || "Please fill in all required fields");
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
       return;
     }
 
+    setCreateEmployeeError(null);
     dismissKeyboard();
     setIsCreating(true);
+
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     try {
       const { error } = await supabase.from("users").insert({
         full_name: newEmployee.full_name.trim(),
@@ -210,14 +221,27 @@ export default function EmployeesScreen() {
 
       if (error) {
         console.error("Error creating employee:", error);
+        setCreateEmployeeError("Failed to create employee. Please try again.");
+        if (Platform.OS !== "web") {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
         return;
       }
 
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
       setNewEmployee({ full_name: "", email: "", phone: "", password: "", shift_start: "08:00", shift_end: "16:00", notes: "" });
+      setCreateEmployeeError(null);
       setShowAddModal(false);
       fetchEmployees();
     } catch (error) {
       console.error("Error creating employee:", error);
+      setCreateEmployeeError("Failed to create employee. Please try again.");
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     } finally {
       setIsCreating(false);
     }
@@ -507,6 +531,7 @@ export default function EmployeesScreen() {
         transparent
         onRequestClose={() => {
           dismissKeyboard();
+          setCreateEmployeeError(null);
           setShowAddModal(false);
         }}
       >
@@ -519,6 +544,7 @@ export default function EmployeesScreen() {
             style={styles.modalBackdrop}
             onPress={() => {
               dismissKeyboard();
+              setCreateEmployeeError(null);
               setShowAddModal(false);
             }}
           />
@@ -528,6 +554,7 @@ export default function EmployeesScreen() {
               <Pressable
                 onPress={() => {
                   dismissKeyboard();
+                  setCreateEmployeeError(null);
                   setShowAddModal(false);
                 }}
                 style={styles.closeButton}
@@ -542,14 +569,22 @@ export default function EmployeesScreen() {
               keyboardShouldPersistTaps="handled"
               onScrollBeginDrag={dismissKeyboard}
             >
+              {/* Validation Error Banner */}
+              {createEmployeeError && (
+                <View style={styles.validationError}>
+                  <Text style={styles.validationErrorText}>{createEmployeeError}</Text>
+                  <AlertCircle size={18} color={Colors.error} />
+                </View>
+              )}
+
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>{t.fullName} *</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, createEmployeeError && !newEmployee.full_name.trim() && styles.inputError]}
                   placeholder={t.fullName}
                   placeholderTextColor={Colors.textTertiary}
                   value={newEmployee.full_name}
-                  onChangeText={(text) => setNewEmployee({ ...newEmployee, full_name: text })}
+                  onChangeText={(text) => { setCreateEmployeeError(null); setNewEmployee({ ...newEmployee, full_name: text }); }}
                   textAlign="right"
                   returnKeyType="next"
                 />
@@ -558,11 +593,11 @@ export default function EmployeesScreen() {
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>{t.email} *</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, createEmployeeError && !newEmployee.email.trim() && styles.inputError]}
                   placeholder={t.email}
                   placeholderTextColor={Colors.textTertiary}
                   value={newEmployee.email}
-                  onChangeText={(text) => setNewEmployee({ ...newEmployee, email: text })}
+                  onChangeText={(text) => { setCreateEmployeeError(null); setNewEmployee({ ...newEmployee, email: text }); }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   textAlign="right"
@@ -587,11 +622,11 @@ export default function EmployeesScreen() {
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>{t.password} *</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, createEmployeeError && !newEmployee.password.trim() && styles.inputError]}
                   placeholder={t.password}
                   placeholderTextColor={Colors.textTertiary}
                   value={newEmployee.password}
-                  onChangeText={(text) => setNewEmployee({ ...newEmployee, password: text })}
+                  onChangeText={(text) => { setCreateEmployeeError(null); setNewEmployee({ ...newEmployee, password: text }); }}
                   secureTextEntry
                   textAlign="right"
                   returnKeyType="next"
@@ -1007,6 +1042,29 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  validationError: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    backgroundColor: Colors.error + "15",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.error + "30",
+  },
+  validationErrorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.error,
+    textAlign: "right",
+  },
+  inputError: {
+    borderColor: Colors.error,
+    borderWidth: 1.5,
   },
   header: {
     paddingHorizontal: 20,

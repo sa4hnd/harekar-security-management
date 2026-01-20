@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Alert, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, ActivityIndicator, Modal, TextInput, Platform, KeyboardAvoidingView } from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, Plus, ChevronRight, Clock, MapPin, User, X, Check, Trash2, ChevronLeft, ChevronDown, AlertCircle } from "lucide-react-native";
 import { Colors } from "@/constants/colors";
 import { useAuth } from "@/state/auth";
 import { supabase, User as UserType, Shift, Attendance } from "@/lib/supabase";
+import * as Haptics from "expo-haptics";
 
 interface ShiftWithDetails extends Shift {
   employee?: UserType;
@@ -31,6 +32,7 @@ export default function ShiftsScreen() {
   });
   const [selectedEmployee, setSelectedEmployee] = useState<UserType | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -90,15 +92,20 @@ export default function ShiftsScreen() {
 
   const handleCreateShift = async () => {
     if (!newShift.user_id || !newShift.location_name.trim() || !newShift.location_address.trim()) {
-      if (Platform.OS === "web") {
-        alert("Please fill in all required fields");
-      } else {
-        Alert.alert("Error", "Please fill in all required fields");
+      setValidationError("Please fill in all required fields");
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
       return;
     }
 
+    setValidationError(null);
     setIsCreating(true);
+
+    if (Platform.OS !== "web") {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     try {
       const dateStr = selectedDate.toISOString().split("T")[0];
 
@@ -125,6 +132,10 @@ export default function ShiftsScreen() {
         status: "pending",
       });
 
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
       setNewShift({
         user_id: "",
         location_name: "",
@@ -134,14 +145,14 @@ export default function ShiftsScreen() {
         notes: "",
       });
       setSelectedEmployee(null);
+      setValidationError(null);
       setShowAddModal(false);
       fetchData();
     } catch (error) {
       console.error("Error creating shift:", error);
-      if (Platform.OS === "web") {
-        alert("Failed to create shift");
-      } else {
-        Alert.alert("Error", "Failed to create shift");
+      setValidationError("Failed to create shift. Please try again.");
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } finally {
       setIsCreating(false);
@@ -349,17 +360,25 @@ export default function ShiftsScreen() {
           <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Shift</Text>
-              <Pressable onPress={() => setShowAddModal(false)} style={styles.closeButton}>
+              <Pressable onPress={() => { setValidationError(null); setShowAddModal(false); }} style={styles.closeButton}>
                 <X size={24} color={Colors.textPrimary} />
               </Pressable>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Validation Error Banner */}
+              {validationError && (
+                <View style={styles.validationError}>
+                  <AlertCircle size={18} color={Colors.error} />
+                  <Text style={styles.validationErrorText}>{validationError}</Text>
+                </View>
+              )}
+
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Employee *</Text>
                 <Pressable
-                  style={styles.selectButton}
-                  onPress={() => setShowEmployeeSelect(true)}
+                  style={[styles.selectButton, validationError && !newShift.user_id && styles.inputError]}
+                  onPress={() => { setValidationError(null); setShowEmployeeSelect(true); }}
                 >
                   {selectedEmployee ? (
                     <View style={styles.selectedEmployee}>
@@ -378,22 +397,22 @@ export default function ShiftsScreen() {
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Location Name *</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, validationError && !newShift.location_name.trim() && styles.inputError]}
                   placeholder="e.g., Main Building"
                   placeholderTextColor={Colors.textLight}
                   value={newShift.location_name}
-                  onChangeText={(text) => setNewShift({ ...newShift, location_name: text })}
+                  onChangeText={(text) => { setValidationError(null); setNewShift({ ...newShift, location_name: text }); }}
                 />
               </View>
 
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Location Address *</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, validationError && !newShift.location_address.trim() && styles.inputError]}
                   placeholder="Enter full address"
                   placeholderTextColor={Colors.textLight}
                   value={newShift.location_address}
-                  onChangeText={(text) => setNewShift({ ...newShift, location_address: text })}
+                  onChangeText={(text) => { setValidationError(null); setNewShift({ ...newShift, location_address: text }); }}
                 />
               </View>
 
@@ -499,6 +518,27 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  validationError: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.error + "15",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.error + "30",
+  },
+  validationErrorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.error,
+  },
+  inputError: {
+    borderColor: Colors.error,
+    borderWidth: 1.5,
   },
   header: {
     backgroundColor: Colors.white,
