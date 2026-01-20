@@ -178,6 +178,8 @@ export const t = {
   normal: "نۆرمال",
   resolved: "چارەسەرکری",
   inProgress: "بەردەوامە",
+  descriptionRequired: "تکایە وەسفەکێ بنڤیسە",
+  loginRequired: "تکایە یەکەم تێبچە",
 
   notifications: "ئاگەهـداری",
   enableNotifications: "چالاککرنا ئاگەهـدارییان",

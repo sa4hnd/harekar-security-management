@@ -39,6 +39,7 @@ export default function IncidentsScreen() {
   const [selectedIncident, setSelectedIncident] = useState<IncidentWithUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPhotoUri, setSelectedPhotoUri] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [newIncident, setNewIncident] = useState({
     type: "suspicious_activity" as Incident["type"],
     priority: "normal" as Incident["priority"],
@@ -132,8 +133,21 @@ export default function IncidentsScreen() {
   };
 
   const handleSubmitIncident = async () => {
-    if (!newIncident.description.trim() || !user) return;
+    // Validation
+    if (!newIncident.description.trim()) {
+      setValidationError(t.descriptionRequired || "Please enter a description");
+      if (Platform.OS !== "web") {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
+      return;
+    }
 
+    if (!user) {
+      setValidationError(t.loginRequired || "Please login first");
+      return;
+    }
+
+    setValidationError(null);
     dismissKeyboard();
     setIsSubmitting(true);
 
@@ -201,15 +215,15 @@ export default function IncidentsScreen() {
 
           // Log notification for each user
           for (const token of tokens) {
-            await logNotification({
-              user_id: token.user_id,
-              type: "incident",
-              title: notificationTitle,
-              body: notificationBody,
-              data: { incidentId, incidentType: newIncident.type },
-              push_token: token.push_token,
-              delivered: true,
-            });
+            await logNotification(
+              token.user_id,
+              notificationTitle,
+              notificationBody,
+              "incident",
+              user.id,
+              { incidentId, incidentType: newIncident.type },
+              token.push_token
+            );
           }
         }
       } catch (notifyError) {
@@ -428,12 +442,12 @@ export default function IncidentsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => { dismissKeyboard(); setShowReportModal(false); setSelectedPhotoUri(null); }} />
+          <Pressable style={styles.modalBackdrop} onPress={() => { dismissKeyboard(); setShowReportModal(false); setSelectedPhotoUri(null); setValidationError(null); }} />
           <TouchableWithoutFeedback onPress={dismissKeyboard}>
             <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
               <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
-                <Pressable onPress={() => { dismissKeyboard(); setShowReportModal(false); setSelectedPhotoUri(null); }} style={styles.closeButton}>
+                <Pressable onPress={() => { dismissKeyboard(); setShowReportModal(false); setSelectedPhotoUri(null); setValidationError(null); }} style={styles.closeButton}>
                   <X size={20} color={Colors.textPrimary} />
                 </Pressable>
                 <Text style={styles.modalTitle}>{t.reportIncident}</Text>
@@ -488,11 +502,14 @@ export default function IncidentsScreen() {
                 <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>{t.incidentDescription} *</Text>
                   <TextInput
-                    style={[styles.formInput, styles.textArea]}
+                    style={[styles.formInput, styles.textArea, validationError && !newIncident.description.trim() && styles.formInputError]}
                     placeholder={t.incidentDescription}
                     placeholderTextColor={Colors.textTertiary}
                     value={newIncident.description}
-                    onChangeText={(text) => setNewIncident({ ...newIncident, description: text })}
+                    onChangeText={(text) => {
+                      setNewIncident({ ...newIncident, description: text });
+                      if (validationError) setValidationError(null);
+                    }}
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
@@ -532,6 +549,14 @@ export default function IncidentsScreen() {
                     </View>
                   )}
                 </View>
+
+                {/* Validation Error */}
+                {validationError && (
+                  <View style={styles.validationError}>
+                    <AlertTriangle size={16} color={Colors.error} />
+                    <Text style={styles.validationErrorText}>{validationError}</Text>
+                  </View>
+                )}
 
                 <Pressable
                   style={({ pressed }) => [
@@ -986,6 +1011,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.glassBorder,
   },
+  formInputError: {
+    borderColor: Colors.error,
+    borderWidth: 2,
+  },
   textArea: {
     minHeight: 100,
     paddingTop: 14,
@@ -1053,6 +1082,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600" as const,
     color: Colors.white,
+  },
+  validationError: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.error + "15",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  validationErrorText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.error,
+    fontWeight: "500" as const,
+    textAlign: "right",
   },
   detailSection: {
     alignItems: "center",
