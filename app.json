@@ -11,10 +11,7 @@
     "newArchEnabled": true,
     "runtimeVersion": "1.0.1",
     "updates": {
-      "url": "https://u.expo.dev/4448d282-e2e9-4c26-afdc-f529f9d758e1",
-      "enabled": true,
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "ON_LOAD"
+      "enabled": false
     },
     "extra": {
       "eas": {
