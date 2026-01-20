@@ -254,40 +254,22 @@ export const STORAGE_BUCKETS = {
 // ============================================
 
 /**
- * Convert a local file URI to a Blob for upload
+ * Convert base64 string to ArrayBuffer
  */
-const uriToBlob = async (uri: string): Promise<Blob> => {
-  if (Platform.OS === "web") {
-    const response = await fetch(uri);
-    return response.blob();
-  }
-
-  // For native platforms, fetch the file as a blob
-  const response = await fetch(uri);
-  return response.blob();
-};
-
-/**
- * Convert base64 string to Blob
- */
-const base64ToBlob = async (base64: string, mimeType: string = "image/jpeg"): Promise<Blob> => {
+const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
   // Remove data URL prefix if present
   const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
 
-  if (Platform.OS === "web") {
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: mimeType });
-  }
+  // Decode base64 using a simple decode function for React Native
+  const binaryString = globalThis.atob
+    ? globalThis.atob(base64Data)
+    : Buffer.from(base64Data, "base64").toString("binary");
 
-  // For React Native, convert base64 to a data URI and fetch
-  const dataUri = `data:${mimeType};base64,${base64Data}`;
-  const response = await fetch(dataUri);
-  return response.blob();
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
 };
 
 /**
@@ -303,18 +285,26 @@ export const uploadImage = async (
   imageUri: string
 ): Promise<string | null> => {
   try {
-    let blob: Blob;
+    let uploadData: ArrayBuffer | Blob;
 
-    // Check if it's a base64 string
     if (imageUri.startsWith("data:")) {
-      blob = await base64ToBlob(imageUri);
+      // Base64 data URI - convert to ArrayBuffer
+      uploadData = base64ToArrayBuffer(imageUri);
+    } else if (Platform.OS === "web") {
+      // Web: fetch and get blob
+      const response = await fetch(imageUri);
+      uploadData = await response.blob();
     } else {
-      blob = await uriToBlob(imageUri);
+      // React Native: read file as base64 using FileSystem, then convert
+      const base64 = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      uploadData = base64ToArrayBuffer(base64);
     }
 
     const { data, error } = await supabase.storage
       .from(bucket)
-      .upload(path, blob, {
+      .upload(path, uploadData, {
         contentType: "image/jpeg",
         upsert: true,
       });
