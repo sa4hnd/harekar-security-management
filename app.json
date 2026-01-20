@@ -2,6 +2,7 @@
   "expo": {
     "name": "هاریکار گروپ",
     "slug": "harikar-group",
+    "owner": "sahndmint",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,9 +13,15 @@
       "policy": "appVersion"
     },
     "updates": {
+      "url": "https://u.expo.dev/4448d282-e2e9-4c26-afdc-f529f9d758e1",
       "enabled": true,
       "fallbackToCacheTimeout": 0,
       "checkAutomatically": "ON_LOAD"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4448d282-e2e9-4c26-afdc-f529f9d758e1"
+      }
     },
     "ios": {
       "supportsTablet": true,
