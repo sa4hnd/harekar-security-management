@@ -314,12 +314,30 @@ export const uploadImage = async (
       return null;
     }
 
-    // Get the public URL
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(data.path);
+    // For private buckets, create a signed URL (valid for 1 year)
+    // For public buckets (like avatars), use public URL
+    if (bucket === STORAGE_BUCKETS.AVATARS) {
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(data.path);
+      return urlData.publicUrl;
+    } else {
+      // Create a signed URL valid for 1 year (31536000 seconds)
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(data.path, 31536000);
 
-    return urlData.publicUrl;
+      if (signedError || !signedData) {
+        console.error("Error creating signed URL:", signedError);
+        // Fallback to public URL
+        const { data: urlData } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(data.path);
+        return urlData.publicUrl;
+      }
+
+      return signedData.signedUrl;
+    }
   } catch (error) {
     console.error("Error uploading image:", error);
     return null;
