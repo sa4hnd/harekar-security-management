@@ -3,13 +3,13 @@
     "name": "هاریکار گروپ",
     "slug": "harikar-group",
     "owner": "sahndmint",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "harikar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "runtimeVersion": "1.0.1",
+    "runtimeVersion": "1.0.2",
     "updates": {
       "url": "https://u.expo.dev/4448d282-e2e9-4c26-afdc-f529f9d758e1",
       "enabled": true,
@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.harikar.security",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "CFBundleDisplayName": "هاریکار گروپ",
         "CFBundleName": "هاریکار گروپ",
