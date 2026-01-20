@@ -73,6 +73,29 @@ CREATE INDEX idx_users_is_active ON users(is_active);
 CREATE INDEX idx_users_push_token ON users(push_token) WHERE push_token IS NOT NULL;
 
 -- ============================================
+-- SHIFTS TABLE (must be before attendance)
+-- ============================================
+-- Stores shift schedules for guards
+CREATE TABLE shifts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  location_name TEXT,
+  location_address TEXT, -- Full address for the location
+  notes TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+
+-- Indexes for shifts
+CREATE INDEX idx_shifts_user_id ON shifts(user_id);
+CREATE INDEX idx_shifts_date ON shifts(date);
+
+-- ============================================
 -- ATTENDANCE TABLE
 -- ============================================
 -- Tracks daily attendance records for security guards
@@ -184,29 +207,6 @@ CREATE INDEX idx_notification_log_user_id ON notification_log(user_id);
 CREATE INDEX idx_notification_log_type ON notification_log(type);
 CREATE INDEX idx_notification_log_sent_at ON notification_log(sent_at DESC);
 CREATE INDEX idx_notification_log_delivered ON notification_log(delivered);
-
--- ============================================
--- SHIFTS TABLE
--- ============================================
--- Stores shift schedules for guards
-CREATE TABLE shifts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  location_name TEXT,
-  location_address TEXT, -- Full address for the location
-  notes TEXT,
-  created_by UUID REFERENCES users(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, date)
-);
-
--- Indexes for shifts
-CREATE INDEX idx_shifts_user_id ON shifts(user_id);
-CREATE INDEX idx_shifts_date ON shifts(date);
 
 -- ============================================
 -- REPORTS TABLE
