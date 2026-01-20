@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
 // Configure how notifications are handled when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -54,21 +55,27 @@ export const getExpoPushToken = async (): Promise<string | null> => {
   try {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) {
+      console.log("Notification permission not granted");
       return null;
     }
 
-    // In development/preview mode, projectId may not be available
-    // We'll still allow local notifications to work without push tokens
+    // Get projectId from app.json/app.config
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+
+    if (!projectId) {
+      console.log("No projectId found - push notifications require EAS project ID");
+      return null;
+    }
+
     try {
       const token = await Notifications.getExpoPushTokenAsync({
-        projectId: undefined, // Will use projectId from app.json/app.config.js if available
+        projectId,
       });
       await AsyncStorage.setItem(PUSH_TOKEN_KEY, token.data);
+      console.log("Push token obtained:", token.data);
       return token.data;
     } catch (tokenError) {
-      // Push tokens require a projectId which isn't available in preview mode
-      // Local notifications will still work without a push token
-      console.log("Push token not available (preview mode) - local notifications still work");
+      console.error("Error getting push token:", tokenError);
       return null;
     }
   } catch (error) {

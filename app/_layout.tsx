@@ -9,6 +9,7 @@ import {
   scheduleShiftEndReminders,
   addNotificationResponseListener,
 } from "@/lib/notifications/notificationService";
+import { registerDevicePushToken } from "@/lib/notifications/pushService";
 import { useNotificationStore } from "@/state/notifications";
 
 // Enable RTL for Kurdish/Arabic
@@ -19,8 +20,9 @@ if (!I18nManager.isRTL) {
 
 function NotificationInitializer() {
   const { user } = useAuth();
-  const { settings, setPushToken, isInitialized, setInitialized } = useNotificationStore();
+  const { settings, setPushToken, pushToken, isInitialized, setInitialized } = useNotificationStore();
 
+  // Initialize notifications and get push token
   useEffect(() => {
     const initializeNotifications = async () => {
       if (Platform.OS === "web" || isInitialized) return;
@@ -37,6 +39,21 @@ function NotificationInitializer() {
 
     initializeNotifications();
   }, []);
+
+  // Register push token with database when user logs in
+  useEffect(() => {
+    const registerToken = async () => {
+      if (Platform.OS === "web" || !user || !pushToken) return;
+
+      // Register the push token with the database
+      const success = await registerDevicePushToken(user.id, pushToken);
+      if (success) {
+        console.log("Push token registered with database");
+      }
+    };
+
+    registerToken();
+  }, [user?.id, pushToken]);
 
   // Schedule shift reminders when user is logged in and has shift times
   useEffect(() => {
