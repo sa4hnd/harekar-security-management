@@ -18,7 +18,10 @@
     },
     "production": {
       "channel": "production",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_RUNTIME_VERSION": "1.0.1"
+      }
     }
   },
   "submit": {
