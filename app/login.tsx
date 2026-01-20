@@ -168,48 +168,6 @@ export default function LoginScreen() {
 
             <Text style={styles.helpText}>{t.contactSupervisor}</Text>
           </View>
-
-          <View style={styles.demoSection}>
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t.demoAccounts}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <View style={styles.demoCards}>
-              <Pressable
-                style={({ pressed }) => [styles.demoCard, pressed && styles.demoCardPressed]}
-                onPress={() => {
-                  setEmail("supervisor@harekar.com");
-                  setPassword("admin123");
-                }}
-              >
-                <View style={styles.demoInfo}>
-                  <Text style={styles.demoRole}>{t.supervisor}</Text>
-                  <Text style={styles.demoCredentials}>supervisor@harekar.com</Text>
-                </View>
-                <View style={[styles.demoIcon, { backgroundColor: Colors.tint.purple }]}>
-                  <Text style={[styles.demoIconText, { color: Colors.secondary }]}>S</Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.demoCard, pressed && styles.demoCardPressed]}
-                onPress={() => {
-                  setEmail("guard1@harekar.com");
-                  setPassword("guard123");
-                }}
-              >
-                <View style={styles.demoInfo}>
-                  <Text style={styles.demoRole}>{t.security}</Text>
-                  <Text style={styles.demoCredentials}>guard1@harekar.com</Text>
-                </View>
-                <View style={[styles.demoIcon, { backgroundColor: Colors.tint.blue }]}>
-                  <Text style={[styles.demoIconText, { color: Colors.primary }]}>G</Text>
-                </View>
-              </Pressable>
-            </View>
-          </View>
         </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -380,69 +338,5 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     textAlign: "center",
     marginTop: 20,
-  },
-  demoSection: {
-    marginBottom: 20,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.separator,
-  },
-  dividerText: {
-    paddingHorizontal: 16,
-    fontSize: 13,
-    color: Colors.textTertiary,
-    fontWeight: "500",
-  },
-  demoCards: {
-    gap: 12,
-  },
-  demoCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    backgroundColor: Colors.cardBackgroundSolid,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-  },
-  demoCardPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  demoIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  demoIconText: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  demoInfo: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  demoRole: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-    marginBottom: 2,
-    textAlign: "right",
-  },
-  demoCredentials: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    textAlign: "right",
   },
 });
