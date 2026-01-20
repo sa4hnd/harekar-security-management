@@ -205,3 +205,6 @@ node_modules/
 .wh.*
 node_modules/
 .env.local
+.wh.*
+node_modules/
+.env.local
