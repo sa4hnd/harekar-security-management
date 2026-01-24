@@ -3,13 +3,13 @@
     "name": "هاریکار گروپ",
     "slug": "harikar-group",
     "owner": "sahndmint",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "harikar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "runtimeVersion": "1.0.2",
+    "runtimeVersion": "1.0.3",
     "updates": {
       "url": "https://u.expo.dev/4448d282-e2e9-4c26-afdc-f529f9d758e1",
       "enabled": true,
@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.harikar.security",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "CFBundleDisplayName": "هاریکار گروپ",
         "CFBundleName": "هاریکار گروپ",
@@ -35,11 +35,9 @@
         "NSPhotoLibraryUsageDescription": "ئەڤ بەرنامە پێدڤی ب دەستگەهشتن ب گالێریێ هەیە بۆ هەلبژارتنا وێنەیێ پرۆفایلی.",
         "NSPhotoLibraryAddUsageDescription": "ئەڤ بەرنامە پێدڤی ب دەستوورێ هەیە بۆ پاراستنا وێنەیان.",
         "NSLocationWhenInUseUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
-        "NSLocationAlwaysUsageDescription": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
         "CFBundleAllowMixedLocalizations": true,
         "CFBundleDevelopmentRegion": "ku",
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "UIBackgroundModes": ["fetch", "remote-notification"],
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
@@ -62,11 +60,8 @@
         "WRITE_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
-        "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION",
         "POST_NOTIFICATIONS"
       ]
     },
@@ -99,10 +94,8 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
-          "locationAlwaysAndWhenInUsePermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
-          "locationAlwaysPermission": "ئەڤ بەرنامە پێدڤی ب زانینا جهی هەیە بۆ پشتڕاستکرنا جهێ ئامادەبوونا تە.",
-          "isIosBackgroundLocationEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
         }
       ],
       [
