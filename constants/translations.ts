@@ -227,4 +227,17 @@ export const t = {
   clearDataDesc: "ژێبرنا هەمی داتایان و زڤڕین بۆ سەرەتایێ",
   clearDataConfirm: "دڵنیای ژ ژێبرنا هەمی داتایان؟",
   dataCleared: "داتا هاتنە ژێبرن",
+
+  // Signup
+  signupForOrganization: "تۆمارکرن بۆ ڕێکخراوێ خۆ",
+  organizationName: "ناڤێ ڕێکخراوێ",
+  yourFullName: "ناڤێ تە یێ تەواو",
+  phoneNumber: "ژمارەیا تەلەفۆنی",
+  createPassword: "پەیڤا نهێنی دروست بکە",
+  confirmPassword: "پەیڤا نهێنی دووبارە بکە",
+  submitApplication: "هنارتنا داخوازیێ",
+  signupSuccess: "سپاس بۆ تۆمارکرنێ!",
+  signupSuccessMessage: "داخوازیا تە هاتیە وەرگرتن. تکایە چاوەڕێ بکە هەتا ئێمە داخوازیا تە پشتڕاست بکەین. دوڤ پشتڕاستکرنێ، ئاگەهـداریەک بۆ تە دهێت.",
+  passwordMismatch: "پەیڤا نهێنی وەک هەڤ نینن",
+  close: "داخستن",
 };
