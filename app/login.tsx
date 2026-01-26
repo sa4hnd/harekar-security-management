@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBackgroundSolid,
     borderRadius: 24,
     padding: 24,
-    marginBottom: 32,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
   },
